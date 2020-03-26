@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
 	}
 
 	std::string file = argv[1];
-	std::ifstream stream(file);
+	std::ifstream stream(file, std::ifstream::binary);
 
 	bigfile::BigArchive archive(stream);
 
