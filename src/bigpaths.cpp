@@ -7,6 +7,7 @@
 // Example program that gets all paths in an archive using bigfile.
 
 #include <iostream>
+#include <vector>
 #include <fstream>
 #include "bigfile.hpp"
 
@@ -17,11 +18,11 @@ int main(int argc, char** argv) {
 	}
 
 	std::string file = argv[1];
-	std::ifstream stream(file, std::ifstream::binary);
+	std::shared_ptr<std::istream> stream(new std::ifstream (file, std::ifstream::binary));
 
 	bigfile::BigArchive archive(stream);
 
-	std::vector<std::string> paths = archive.GetAllPaths();
+	std::vector<std::string> paths = archive.GetPaths();
 
 	for(std::string path : paths)
 		std::cout << path << "\n";

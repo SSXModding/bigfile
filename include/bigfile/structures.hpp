@@ -1,3 +1,11 @@
+// bigfile: a header-only C++ library for
+//			reading data from Electronic Arts
+//			BIG archives.
+//
+// (c) 2020 Lily <lily.modeco80@protonmail.ch> under the terms of the MIT License.
+
+// BIG format data structures (and operator defintions)
+
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -15,6 +23,7 @@ namespace detail {
 		uint32_t first_offset;
 	};
 
+
 	struct BigFileHeader {
 		uint32_t offset;
 		uint32_t length;
@@ -22,6 +31,11 @@ namespace detail {
 
 	struct BigFile : public BigFileHeader {
 		std::vector<char> data;
+
+		static BigFile Empty;
 	};
+
+
+	bool operator!(BigFile& file);
 
 }
