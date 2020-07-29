@@ -7,7 +7,9 @@
 // Implementation of operators for BigFile
 // and instantation of the special Empty object.
 
-namespace detail {
+#include <bigfile.hpp>
+
+namespace bigfile {
 
 	BigFile BigFile::Empty = { (uint32_t)-1, (uint32_t)-1 };
 
@@ -18,4 +20,12 @@ namespace detail {
 	#undef cmp
 	}
 
+	CoFbFile CoFbFile::Empty = { (uint32_t)-1, (uint32_t)-1 };
+
+	bool operator!(CoFbFile& file) {
+	#define cmp(v) (file.v != CoFbFile::Empty.v)
+		return (&file != &CoFbFile::Empty) 
+				&& cmp(offset) && cmp(length) && cmp(data);
+	#undef cmp
+	}
 }

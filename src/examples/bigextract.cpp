@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
 	}
 
 	std::string big = argv[1];
-	std::shared_ptr<std::istream> stream(new std::ifstream(big, std::ifstream::binary));
+	std::ifstream stream(big, std::ifstream::binary);
 
 	bigfile::BigArchive archive(stream);
 

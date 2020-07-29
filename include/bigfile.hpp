@@ -1,4 +1,4 @@
-// bigfile: a header-only C++ library for
+// bigfile: a C++ library for
 //			reading data from Electronic Arts
 //			BIG archives.
 //
@@ -6,19 +6,16 @@
 
 // Main bigfile header.
 
-#include "bigfile/utility_functions.hpp"
-#include "bigfile/structures.hpp"
-#include "bigfile/big_archive.hpp"
-
-#if !defined(BIGFILE_NO_IMPL)
-	#include "bigfile/impl/big_archive.hpp"
-	#include "bigfile/impl/structures.hpp"
-	#include "bigfile/impl/utility_functions.hpp"
-#endif
-
-// Exports of bigfile.
+// core type defintions
 namespace bigfile {
-	using detail::BigFileHeader;
-	using detail::BigFile;
-	using detail::BigArchive;
+
+	// this is actually four bytes, but
+	// used as a marker for stuff that needs to be three bytes
+	typedef std::uint32_t threebyte_t;
+
 }
+
+#include <bigfile/utility_functions.hpp>
+#include <bigfile/structures/bigf.hpp>
+#include <bigfile/structures/cofb.hpp>
+#include <bigfile/big_archive.hpp>

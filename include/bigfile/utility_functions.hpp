@@ -1,16 +1,17 @@
-// bigfile: a header-only C++ library for
+// bigfile: a C++ library for
 //			reading data from Electronic Arts
 //			BIG archives.
 //
 // (c) 2020 Lily <lily.modeco80@protonmail.ch> under the terms of the MIT License.
 
-// Definition (and slight implementation) of utlity functions used in bigfile.
+// Definition (and implementation) of utlity functions used in bigfile.
 
 #include <iostream>
 #include <algorithm>
 #include <cstring>
+#include <bigfile/archive_type.hpp>
 
-#ifdef MSC_VER
+#ifdef _MSC_VER
 	#include <intrin.h>
 	// Prefer the intrinsic function versions
 	// of the following functions, if they
@@ -19,6 +20,7 @@
 	#pragma intrinsic(_byteswap_ulong)
 	#pragma intrinsic(_byteswap_uint64)
 
+	// Define our portable byteswap macros for MSVC.
 	#define BYTESWAP16(x) _byteswap_ushort(x)
 	#define BYTESWAP32(x) _byteswap_ulong(x)
 	#define BYTESWAP64(x) _byteswap_uint64(x)
@@ -35,23 +37,45 @@
 #endif
 
 
-namespace detail {
+namespace bigfile {
 
+	/**
+	 * Swap the endian of a provided value.
+	 *
+	 * \tparam T Type
+	 * \param[in] value value to swap endian of
+	 */
 	template<typename T>
-	inline T EndianSwap(T value) {
+	inline T swap_endian(T value) {
 		if constexpr(sizeof(T) == 2) {
 			return BYTESWAP16(value);
 		} else if constexpr(sizeof(T) == 4) {
 			return BYTESWAP32(value);
 		} else if constexpr(sizeof(T) == 8) {
 			return BYTESWAP64(value);
+		} else {
+			// swap sizeof(std::uint16_t) bytes at a time of any structure.
+			// slower than an individual N-bit field, but
+			// whatever. At least we can swap the endian of anything we want.
+
+			T temp{};
+			
+			// copy value-structure to temp structure
+			memcpy(&temp, &value, sizeof(T));
+
+			// perform swap
+			for(int i = 0; i < sizeof(T); i += sizeof(std::uint16_t))
+				((std::uint16_t*)&temp)[i] = BYTESWAP16(((std::uint16_t*)&temp)[i]);
+
+			return temp;
 		}
 	}
 
-	bool MagicCompare(char value[4]);
+	ArchiveType GetArchiveType(char* value);
 
 }
 
+// undefine internal macros.
 #undef BYTESWAP16
 #undef BYTESWAP32
 #undef BYTESWAP64

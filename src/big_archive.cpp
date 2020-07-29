@@ -6,6 +6,9 @@
 
 // Implementation of BigArchive.
 
+#include <bigfile/big_archive.hpp>
+#include <bigfile/utility_functions.hpp>
+
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ || defined(_WIN32)
 	#define BIGFILE_LITTLE_ENDIAN
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -14,45 +17,24 @@
 
 #define SWAP_MEMBER(o, m) o.m = EndianSwap(o.m)
 
-namespace detail {
-
-	BigArchive::~BigArchive() {
-		if(reading) {
-			reading = false;
-			read_stream.reset();
-		}
-
-		files.clear();
-	}
+namespace bigfile {
 
 
-	bool BigArchive::ReadFrom(std::shared_ptr<std::istream> stream) {
-		if(!stream)
-			return false;
-
-		reading = true;
-		read_stream = std::shared_ptr<std::istream>(stream);
-
-		files.clear();
-
-		// read in the header
-		read_stream->read((char*)&header, sizeof(BigHeader));
-
-		if(!MagicCompare(header.magic))
-			return false;
-
+	void ReadBigf(std::istream* stream) {
+		BigHeader header;
+		
 		// swap things from big endian to little endian
 		// if applicable for the platform
 #ifdef BIGFILE_LITTLE_ENDIAN
-		SWAP_MEMBER(header, file_count);
-		SWAP_MEMBER(header, first_offset);
+		SWAP_MEMBER(header, filecount);
+		SWAP_MEMBER(header, firstoffset);
 #endif
 
 		// read in file table
 		for(std::uint32_t i = 0; i < header.file_count; ++i) {
 			std::string filename;
 			BigFile file;
-			read_stream->read((char*)&file, sizeof(BigFileHeader));
+			stream->read((char*)&file, sizeof(BigFileHeader));
 
 #ifdef BIGFILE_LITTLE_ENDIAN
 			SWAP_MEMBER(file, offset);
@@ -60,7 +42,7 @@ namespace detail {
 #endif
 			// *back crunching noises*
 			while(true) {
-				char c = read_stream->get();
+				char c = stream->get();
 				if(c == '\0')
 					break;
 	
@@ -68,6 +50,39 @@ namespace detail {
 			}
 
 			files[filename] = file;
+		}
+	}
+
+	BigArchive::~BigArchive() {
+		files.clear();
+	}
+
+
+	bool BigArchive::ReadFrom(std::istream* stream) {
+		if(!stream)
+			return false;
+
+		reading = true;
+		read_stream = stream;
+
+		files.clear();
+
+		char magic[4];
+
+		// read in the header
+		read_stream->read((char*)&magic, 4);
+
+		auto format = GetArchiveType(magic);
+
+		switch(format) {
+		case ArchiveType::BIGF:
+			ReadBigf(read_stream);
+			break;
+			
+		case ArchiveType::NotArchive:
+		default:
+			return false;
+			break;
 		}
 			
 		return true;
@@ -97,25 +112,6 @@ namespace detail {
 		return file;			
 	}
 
-	std::shared_ptr<BigArchive> BigArchive::GetNestedArchive(const std::string& path) {
-		auto file = GetFile(path);
-
-		if(file.length == 0)
-			return nullptr;
-
-		char magic_check[4];			
-		std::shared_ptr<std::istream> stream (new std::istringstream {file.data.data()});
-			
-		stream->read(magic_check, 4);
-		if(!MagicCompare(magic_check)) {
-			stream->clear(); // clean up stream
-			stream.reset();
-			return nullptr;
-		}
-
-		stream->seekg(0, std::istringstream::beg);
-		return std::make_shared<BigArchive>(stream);
-	}
 
 	std::vector<std::string> BigArchive::GetPaths() {
 		std::vector<std::string> temp;
