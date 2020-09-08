@@ -9,7 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include "bigfile.hpp"
+#include <bigfile.h>
 
 int main(int argc, char** argv) {
 	if(argc < 2) {
@@ -18,9 +18,13 @@ int main(int argc, char** argv) {
 	}
 
 	std::string file = argv[1];
-	std::shared_ptr<std::istream> stream(new std::ifstream (file, std::ifstream::binary));
+	std::ifstream stream(file, std::ifstream::binary);
 
-	bigfile::BigArchive archive(stream);
+	bigfile::BigArchive archive;
+
+	if(!archive.ReadFrom(stream)) {
+		std::cout << "Error reading archive\n";
+	}
 
 	std::vector<std::string> paths = archive.GetPaths();
 

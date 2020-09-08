@@ -7,23 +7,24 @@
 // Implemntation of utlity functions used in bigfile.
 
 #include <cstring>
-#include <bigfile/archive_type.hpp>
+#include <bigfile/types.h>
+#include <bigfile/archive_type.h>
 
 namespace bigfile {
 
-	ArchiveType GetArchiveType(char* value) {
+	ArchiveType GetArchiveType(byte* value) {
 		constexpr static char BigfMagic[] = "BIGF";
 
 		if(!value)
 			return ArchiveType::NotArchive;
 
-		if(!strncmp(value, BigfMagic, 4))
+		if(!strncmp((char*)value, BigfMagic, 4))
 			return ArchiveType::BIGF;
 
-		if (value[0] == 0xC0 && value[1] == 0xFB)
+		if(value[0] == 0xC0 && value[1] == 0xFB)
 			return ArchiveType::CoFb;
 
 		return ArchiveType::NotArchive;
 	}
 
-}
+} // namespace bigfile

@@ -1,57 +1,68 @@
-// bigfile: a header-only C++ library for
-//			reading data from Electronic Arts
-//			BIG archives.
-//
-// (c) 2020 Lily <lily.modeco80@protonmail.ch> under the terms of the MIT License.
-
 // Example program that extracts all files in an archive using bigfile.
 
 #include <iostream>
+// std::quoted
+#include <iomanip>
 #include <vector>
 #include <fstream>
-#include "bigfile.hpp"
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+#include <bigfile.h>
 
 int main(int argc, char** argv) {
-	if(argc < 2) {
-		std::cout << "Usage: " << argv[0] << " [.big file]\n";
+	if(argc < 3) {
+		std::cout << "Usage: " << argv[0] << " [.big file] [output directory]\n";
 		return 1;
 	}
 
-	std::string big = argv[1];
-	std::ifstream stream(big, std::ifstream::binary);
+	fs::path root(argv[2]);
+	std::ifstream stream(argv[1], std::ifstream::binary);
 
-	bigfile::BigArchive archive(stream);
+	bigfile::BigArchive archive;
+
+	if(!archive.ReadFrom(stream)) {
+		std::cout << "Error reading archive\n";
+	}
+
+	if(!fs::exists(root))
+		fs::create_directory(root);
 
 	std::vector<std::string> paths = archive.GetPaths();
 
 	for(std::string path : paths) {
-		std::cout << path << '\n';
-
-		// NOTE:
-		//	We do no handling of if GetFile() returns BigFile::Empty because we most likely
-		//	have paths that are all valid.
-		//	For a program expecting a user or developer-specified path instead of 
-		//	paths directly from the file table, it's reccomended that you instead do something like:
-		//
-		//	bigfile::BigArchive archive((... stream object of your liking))
-		//	... do checking code to make sure the archive loaded in ...
-		//
-		//	auto file = archive.GetFile("path/here/thing.txt");
-		//	if(!file)
-		//		... code to invoke on file not existing ...
-		//	... do what you like with the file ...
-		//
+	
 		auto file = archive.GetFile(path);
+		
+		// normalize path if the file name contains one, 
+		// and create the directory tree too
+		if(path.find('/') != std::string::npos || path.find('\\') != std::string::npos) {
+			while(true) {
+				auto it = path.find('/');
 
-		std::ofstream stream(path, std::ofstream::binary);
-		stream << file.data.data();
+				if(it != std::string::npos)
+					path[it] = fs::path::preferred_separator;
+				else
+					break;
+			}
+
+			auto nofile = path.substr(0, path.rfind(fs::path::preferred_separator));
+
+			// create directory tree
+			fs::create_directories(root / nofile);
+		}
+
+		auto fspath = root / path;
+
+		std::cout << "Extracting file \"" << fspath.string() << "\"...\n";
+
+		std::ofstream stream(fspath.string(), std::ofstream::binary);
+		stream.write((char*)file->data.data(), file->data.size());
 		stream.close();
-
-		// NOTE:
-		//	A cleanup stage is no longer required!
-		//	Because GetFile() returns a reference to what's stored in the map of the BigArchive instance
-		//	instead of a copy, all cleanup will be done when the archive object is destructed.
 	}
+
+	std::cout << "Done extracting files.\n";
 
 	return 0;
 }

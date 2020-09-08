@@ -6,129 +6,70 @@
 
 // Implementation of BigArchive.
 
-#include <bigfile/big_archive.hpp>
-#include <bigfile/utility_functions.hpp>
+#include <bigfile/big_archive.h>
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ || defined(_WIN32)
-	#define BIGFILE_LITTLE_ENDIAN
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	#define BIGFILE_BIG_ENDIAN
-#endif
-
-#define SWAP_MEMBER(o, m) o.m = EndianSwap(o.m)
+// Include the implementation structure TU
+#include "bigarchive_impl.cpp"
 
 namespace bigfile {
 
-
-	void ReadBigf(std::istream* stream) {
-		BigHeader header;
-		
-		// swap things from big endian to little endian
-		// if applicable for the platform
-#ifdef BIGFILE_LITTLE_ENDIAN
-		SWAP_MEMBER(header, filecount);
-		SWAP_MEMBER(header, firstoffset);
-#endif
-
-		// read in file table
-		for(std::uint32_t i = 0; i < header.file_count; ++i) {
-			std::string filename;
-			BigFile file;
-			stream->read((char*)&file, sizeof(BigFileHeader));
-
-#ifdef BIGFILE_LITTLE_ENDIAN
-			SWAP_MEMBER(file, offset);
-			SWAP_MEMBER(file, length);
-#endif
-			// *back crunching noises*
-			while(true) {
-				char c = stream->get();
-				if(c == '\0')
-					break;
-	
-				filename += c;
-			}
-
-			files[filename] = file;
-		}
+	BigArchive::BigArchive() {
+		impl = new BigArchive::Impl();
 	}
 
 	BigArchive::~BigArchive() {
-		files.clear();
+		delete impl;
 	}
 
-
-	bool BigArchive::ReadFrom(std::istream* stream) {
+	bool BigArchive::ReadFrom(std::istream& stream) {
 		if(!stream)
 			return false;
 
-		reading = true;
-		read_stream = stream;
-
-		files.clear();
-
-		char magic[4];
+		byte magic[4];
 
 		// read in the header
-		read_stream->read((char*)&magic, 4);
+		stream.read((char*)&magic, 4);
 
 		auto format = GetArchiveType(magic);
 
 		switch(format) {
-		case ArchiveType::BIGF:
-			ReadBigf(read_stream);
-			break;
-			
-		case ArchiveType::NotArchive:
-		default:
-			return false;
-			break;
+			case ArchiveType::BIGF:
+				// read a BIGF bigfile
+				impl->ReadBigfImpl(stream);
+				break;
+
+			case ArchiveType::CoFb:
+				// seek back to after 0xC0FB
+				stream.seekg(2, std::istream::beg);
+				impl->ReadCofbImpl(stream);
+				return true;
+				break;
+
+			case ArchiveType::NotArchive:
+			default:
+				return false;
+				break;
 		}
-			
+
 		return true;
 	}
 
-	BigFile& BigArchive::GetFile(const std::string& path) {
-		if(!reading)
-			return BigFile::Empty;
 
-		auto it = files.find(path);
-		if(it == files.end())
-			return BigFile::Empty; // not in archive
-
-		BigFile& file = it->second;
-
-		if(file.data.empty()) {
-			// read in file
-			file.data.resize(file.length);
-
-			auto old_pos = read_stream->tellg();
-			read_stream->seekg(file.offset, std::istream::beg);
-			read_stream->read((char*)&file.data[0], file.length);
-
-			read_stream->seekg(old_pos, std::istream::beg);
-		}
-
-		return file;			
+	ArchiveType BigArchive::GetCurrentArchiveType() {
+		return impl->type;
 	}
 
+	std::optional<File> BigArchive::GetFile(const std::string& path) {
+		return impl->GetFileImpl(path);
+	}
 
 	std::vector<std::string> BigArchive::GetPaths() {
 		std::vector<std::string> temp;
 
-		for(auto&& t : files)
+		for(auto&& t : impl->files)
 			temp.push_back(t.first);
 
 		return temp;
 	}
-}
 
-#ifdef BIGFILE_LITTLE_ENDIAN
-	#undef BIGFILE_LITTLE_ENDIAN
-#endif
-
-#ifdef BIGFILE_BIG_ENDIAN
-	#undef BIGFILE_BIG_ENDIAN
-#endif
-
-#undef SWAP_MEMBER
+} // namespace bigfile
