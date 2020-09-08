@@ -69,6 +69,8 @@ namespace bigfile {
 		void ReadBigfImpl(std::istream& stream) {
 			BigHeader header;
 
+			type = ArchiveType::BIGF;
+
 			ReadStruct(stream, header);
 
 			SwapBE(header.filecount);
@@ -111,6 +113,8 @@ namespace bigfile {
 		 */
 		void ReadCofbImpl(std::istream& stream) {
 			CoFbHeader header;
+
+			type = ArchiveType::CoFb;
 
 			ReadStruct(stream, header);
 			

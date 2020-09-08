@@ -26,16 +26,28 @@ int main(int argc, char** argv) {
 		std::cout << "Error reading archive\n";
 	}
 
+	switch(archive.GetCurrentArchiveType()) {
+		case bigfile::ArchiveType::BIGF:
+			std::cout << "BIGF archive\n";
+			break;
+
+		case bigfile::ArchiveType::CoFb:
+			std::cout << "SSX Tricky C0FB archive\n";
+			break;
+
+		default:
+			break;
+	}
+
 	if(!fs::exists(root))
 		fs::create_directory(root);
 
 	std::vector<std::string> paths = archive.GetPaths();
 
 	for(std::string path : paths) {
-	
 		auto file = archive.GetFile(path);
-		
-		// normalize path if the file name contains one, 
+
+		// normalize path if the file name contains one,
 		// and create the directory tree too
 		if(path.find('/') != std::string::npos || path.find('\\') != std::string::npos) {
 			while(true) {
