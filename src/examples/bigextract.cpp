@@ -28,11 +28,11 @@ int main(int argc, char** argv) {
 
 	switch(archive.GetCurrentArchiveType()) {
 		case bigfile::ArchiveType::BIGF:
-			std::cout << "BIGF archive\n";
+			std::cout << "Extracting a BIGF archive\n";
 			break;
 
 		case bigfile::ArchiveType::CoFb:
-			std::cout << "SSX Tricky C0FB archive\n";
+			std::cout << "Extracting a SSX Tricky C0FB archive\n";
 			break;
 
 		default:

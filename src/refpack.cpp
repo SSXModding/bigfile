@@ -1,4 +1,5 @@
 #include <bigfile/refpack.h>
+#include <bigfile/endian_detection.h>
 
 namespace bigfile {
 	namespace refpack {
@@ -7,6 +8,22 @@ namespace bigfile {
 		constexpr auto uint24_size = 3u;
 
 		// TODO: add a function to perform RefPack compression
+
+		/**
+		 * inline function to verify refpack magic of 0xFB
+		 */
+		inline bool CheckMagic(uint16 sig) { 
+			byte val;
+
+			// set value depending on endian
+			if constexpr(current_endian == endian::little) {
+				val = *(((byte*)&sig));
+			} else if constexpr(current_endian == endian::big) {
+				val = (((byte*)&sig)[1]);
+			}
+
+			return val == 0xFB;
+		}
 
 		std::vector<byte> Decompress(Span<byte> compressed) {
 			const byte* in = compressed.get();
@@ -29,6 +46,16 @@ namespace bigfile {
 				return {};
 
 			uint16 signature = ((in[0] << 8) | in[1]);
+
+			// a bit of robustness that was integrated into SSX Tricky's RefPack mechanism
+			// but not integrated into TSO (which probably came from the EAC library directly like C&C)
+			// is to check if the 0xFB magic exists before trying to decompress what could be 
+			// malformed data.
+			//
+			// We do that. It's probably a good idea(TM).
+			if(!CheckMagic(signature))
+				return {};
+
 			in += sizeof(uint16);
 
 			// skip uint24 compressed size field

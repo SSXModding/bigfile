@@ -1,10 +1,4 @@
-// bigfile: a header-only C++ library for
-//			reading data from Electronic Arts
-//			BIG archives.
-//
-// (c) 2020 Lily <lily.modeco80@protonmail.ch> under the terms of the MIT License.
-
-// Example program that gets all paths in an archive using bigfile.
+// example ls-like program using bigfile
 
 #include <iostream>
 #include <vector>
@@ -17,6 +11,8 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+	bool enable_cofb = false;
+
 	std::string file = argv[1];
 	std::ifstream stream(file, std::ifstream::binary);
 
@@ -26,10 +22,34 @@ int main(int argc, char** argv) {
 		std::cout << "Error reading archive\n";
 	}
 
+	switch(archive.GetCurrentArchiveType()) {
+		case bigfile::ArchiveType::BIGF:
+			std::cout << "BIGF archive\n";
+			break;
+
+		case bigfile::ArchiveType::CoFb:
+			std::cout << "SSX Tricky C0FB archive\n";
+			enable_cofb = true;
+			break;
+
+		default:
+			break;
+	}
+
 	std::vector<std::string> paths = archive.GetPaths();
+	std::vector<bigfile::File> files;
 
-	for(std::string path : paths)
-		std::cout << path << "\n";
+	for(std::string path : paths) {
+		auto file = archive.GetFile(path).value();
 
+		if(enable_cofb) {
+			if(file.type == bigfile::CofbFileType::Refpack)
+				std::cout << "\"" << path << "\" (compressed) size " << file.compressed_size / 1000 << " KB (actual size " << file.size / 1000 << " KB)\n";
+			else
+				std::cout << "\"" << path << "\" (uncompressed) size " << file.size / 1000 << " KB\n";
+		} else {
+			std::cout << "\"" << path << "\" (uncompressed) size " << file.size / 1000 << " KB\n";
+		}
+	}
 	return 0;
 }

@@ -4,24 +4,15 @@
 
 #include <bigfile/big_archive.h>
 #include <bigfile/utility_functions.h>
+#include <bigfile/endian_detection.h>
 
 #include <bigfile/refpack.h>
 
+#include "structs/bigf.h"
+#include "structs/cofb.h"
+
 namespace bigfile {
 
-	/**
-	 * endian enumeration
-	 */
-	enum class endian : byte {
-		little,
-		big
-	};
-
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ || defined(_WIN32)
-	constexpr endian current_endian = endian::little;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	constexpr endian current_endian = endian::big;
-#endif
 
 	/**
 	 * Swap a big endian thing if the machine is little endian.
@@ -73,18 +64,18 @@ namespace bigfile {
 
 			ReadStruct(stream, header);
 
-			SwapBE(header.filecount);
-			SwapBE(header.index_table_size);
+			SwapBE(header.FileCount);
+			SwapBE(header.IndexTableSize);
 
 			// read files
-			for(std::uint32_t i = 0; i < header.filecount; ++i) {
+			for(std::uint32_t i = 0; i < header.FileCount; ++i) {
 				std::string filename;
 				BigFileHeader fheader;
 				File file;
 				ReadStruct(stream, fheader);
 
-				SwapBE(fheader.offset);
-				SwapBE(fheader.length);
+				SwapBE(fheader.Offset);
+				SwapBE(fheader.Length);
 
 				// get the filename of the file we're going to read
 				while(true) {
@@ -97,10 +88,12 @@ namespace bigfile {
 
 				auto oldpos = stream.tellg();
 
-				stream.seekg(fheader.offset, std::istream::beg);
+				stream.seekg(fheader.Offset, std::istream::beg);
 
-				file.data.resize(fheader.length);
-				stream.read((char*)file.data.data(), fheader.length);
+				file.size = fheader.Length;
+
+				file.data.resize(fheader.Length);
+				stream.read((char*)file.data.data(), fheader.Length);
 
 				stream.seekg(oldpos, std::istream::beg);
 
@@ -118,19 +111,19 @@ namespace bigfile {
 
 			ReadStruct(stream, header);
 			
-			SwapBE(header.file_count);
-			SwapBE(header.index_table_size);
+			SwapBE(header.FileCount);
+			SwapBE(header.IndexTableSize);
 
-			for(std::uint32_t i = 0; i < header.file_count; ++i) {
+			for(std::uint32_t i = 0; i < header.FileCount; ++i) {
 				std::string filename;
 				CoFbFileHeader fheader;
 				File file;
 				
-				fheader.offset = ReadUint24(stream);
-				fheader.compressed_length = ReadUint24(stream);
+				fheader.Offset = ReadUint24(stream);
+				fheader.CompressedLength = ReadUint24(stream);
 				
-				SwapLE(fheader.offset);
-				SwapLE(fheader.compressed_length);
+				SwapLE(fheader.Offset);
+				SwapLE(fheader.CompressedLength);
 
 				// get the filename of the file we're going to read
 				while(true) {
@@ -142,16 +135,20 @@ namespace bigfile {
 				}
 
 				auto oldpos = stream.tellg();
-				std::vector<byte> decompressed(fheader.compressed_length);
-				stream.seekg(fheader.offset, std::istream::beg);
+				std::vector<byte> decompressed(fheader.CompressedLength);
 
-				stream.read((char*)decompressed.data(), fheader.compressed_length);
+				stream.seekg(fheader.Offset, std::istream::beg);
+
+				stream.read((char*)decompressed.data(), fheader.CompressedLength);
 
 				if(decompressed[0] == 0x10 && decompressed[1] == 0xFB) {
 					// Refpack compressed file
 					file.type = CofbFileType::Refpack;
-					file.data = refpack::Decompress(MakeSpan(decompressed.data(), fheader.compressed_length));
+					file.compressed_size = fheader.CompressedLength;
+					file.data = refpack::Decompress(MakeSpan(decompressed.data(), fheader.CompressedLength));
+					file.size = file.data.size();
 				} else {
+					file.size = fheader.CompressedLength;
 					file.data = decompressed;
 				}
 

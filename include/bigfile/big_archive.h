@@ -9,13 +9,24 @@
 #include <variant>
 #include <optional>
 
+#include <bigfile/types.h>
 #include <bigfile/archive_type.h>
-#include <bigfile/structures/bigf.h>
-#include <bigfile/structures/cofb.h>
 
 namespace bigfile {
 
-	// TODO: doxygenate
+	// TODO:
+	// - move the file structure into another file we include here
+	// - start work on implementing serialization & verify with game assets (this will be reeeal fun)
+
+	/**
+	 * file type for C0FB files
+	 */
+	enum class CofbFileType {
+		Uncompressed,
+		// COFB files are usually packed in Refpack format.
+		// In some cases (see SSXFE.BIG which is a COFB archive's tricky.ser) this is not true.
+		Refpack
+	};
 
 	/**
 	 * "Generic" file structure
@@ -27,49 +38,70 @@ namespace bigfile {
 		 * Unused (defaults to CoFbFileType::Uncompressed) if the archive is purely BIGF.
 		 */
 		CofbFileType type = CofbFileType::Uncompressed;
+		
+		/**
+		 * Compressed file size.
+		 */
+		uint32 compressed_size = 0;
 
 		/**
-		 * file data
-		 * Automatically uncompressed if the file is refpack compressed as a C0FB
+		 * Actual file size.
+		 */
+		uint32 size = 0;
+
+		/**
+		 * File data
+		 * Automatically decompressed if the file is refpack compressed as a C0FB
 		 */
 		std::vector<byte> data;
 	};
 
 	struct BigArchive {
-		// Default empty constructor.
 		BigArchive();
-
-		// Destructor
 		~BigArchive();
-
-		// Read in an archive from a stream
+		
+		/** 
+		 * Read in a BIGF or C0FB archive from the given stream.
+		 * Returns false on error.
+		 */
 		bool ReadFrom(std::istream& stream);
 
-		// Gets a file from the archive.
-		// Will not fetch if already fetched previously.
+		
+		/** 
+		 * Get a file from the archive. Returns an optional,
+		 * which is empty in case of error
+		 */
 		std::optional<File> GetFile(const std::string& path);
 
 		std::vector<std::string> GetPaths();
 
-		// return the archive type
+		/** 
+		 * Get the current archive type. 
+		 */
 		ArchiveType GetCurrentArchiveType();
 
-		// WRITING FUNCTIONS
-		//
-		// NOT IMPLEMENTED YET
-		//
+		// Archive Writing functions
+		// Not yet implemented
 
-		// Setup the archive for the given type
+		/**
+		 * Set up an new empty archive.
+		 */
 		bool SetupArchive(ArchiveType type);
 
-		// Add a file with the given path (actually a filename), with the file type.
-		// NOTE: the file type is ignored if the archive type is bigf.
-		// If you're writing a tool to replace files,
-		// make VERY sure to keep note of the file type.
-		bool AddFile(const std::string& path, File& file, CofbFileType type = CofbFileType::Uncompressed);
+		/** 
+		 * Add a file with the given path (actually a filename), with the given CoFb file type.
+		 * NOTE: the file type is ignored if the archive type is BIGF.
+		 */
+		bool AddFile(const std::string& path, File& file, CofbFileType type = CofbFileType::Refpack);
+
+		/**
+		 * Like AddFile(), but only functions if the path exists beforehand
+		 * and remembers the previous file type.
+		 */
+		bool ReplaceFile(const std::string& path, File& file);
 
 		// Remove a file from the archive.
-		void RemoveFile(const std::string& path);
+		bool RemoveFile(const std::string& path);
 
 		// Serialize the archive to the given stream.
 		bool WriteArchive(std::ostream& stream);

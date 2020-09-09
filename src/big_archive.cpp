@@ -1,14 +1,6 @@
-// bigfile: a header-only C++ library for
-//			reading data from Electronic Arts
-//			BIG archives.
-//
-// (c) 2020 Lily <lily.modeco80@protonmail.ch> under the terms of the MIT License.
-
-// Implementation of BigArchive.
-
 #include <bigfile/big_archive.h>
 
-// Include the implementation structure TU
+// Include the implementation TU
 #include "bigarchive_impl.cpp"
 
 namespace bigfile {
@@ -25,22 +17,21 @@ namespace bigfile {
 		if(!stream)
 			return false;
 
+		// Do a magic check
 		byte magic[4];
-
-		// read in the header
 		stream.read((char*)&magic, 4);
 
-		auto format = GetArchiveType(magic);
+		ArchiveType format = GetArchiveType(magic);
 
 		switch(format) {
 			case ArchiveType::BIGF:
-				// read a BIGF bigfile
 				impl->ReadBigfImpl(stream);
 				break;
 
 			case ArchiveType::CoFb:
 				// seek back to after 0xC0FB
-				stream.seekg(2, std::istream::beg);
+				// otherwise we will skip the first header short
+				stream.seekg(sizeof(uint16), std::istream::beg);
 				impl->ReadCofbImpl(stream);
 				return true;
 				break;
