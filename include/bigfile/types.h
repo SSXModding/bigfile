@@ -18,8 +18,14 @@ namespace bigfile {
 	typedef std::int64_t int64;
 	typedef std::uint64_t uint64;
 
-	// this is actually four bytes, but
-	// used as a marker for stuff that needs to be three bytes and to the reader
-	typedef std::uint32_t threebyte_t;
+	/**
+	 * 4-byte "three-byte" type.
+	 */
+	typedef uint32 threebyte_t;
+
+	/**
+	 * Size of a threebyte_t.
+	 */
+	constexpr std::size_t threebyte_size = 3u;
 
 } // namespace bigfile

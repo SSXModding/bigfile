@@ -4,26 +4,7 @@
 namespace bigfile {
 	namespace refpack {
 
-		// helper variable to not hardcode 3u all over the place
-		constexpr auto uint24_size = 3u;
-
 		// TODO: add a function to perform RefPack compression
-
-		/**
-		 * inline function to verify refpack magic of 0xFB
-		 */
-		inline bool CheckMagic(uint16 sig) { 
-			byte val;
-
-			// set value depending on endian
-			if constexpr(current_endian == endian::little) {
-				val = *(((byte*)&sig));
-			} else if constexpr(current_endian == endian::big) {
-				val = (((byte*)&sig)[1]);
-			}
-
-			return val == 0xFB;
-		}
 
 		std::vector<byte> Decompress(Span<byte> compressed) {
 			const byte* in = compressed.get();
@@ -53,18 +34,18 @@ namespace bigfile {
 			// malformed data.
 			//
 			// We do that. It's probably a good idea(TM).
-			if(!CheckMagic(signature))
+			if(in[1] != 0xFB)
 				return {};
 
 			in += sizeof(uint16);
 
 			// skip uint24 compressed size field
 			if(signature & 0x0100)
-				in += uint24_size;
+				in += threebyte_size;
 
 			// read the uint24 decompressed size
 			uint32 decompressed_size = ((in[0] << 16) | (in[1] << 8) | in[2]);
-			in += uint24_size;
+			in += threebyte_size;
 
 			// then resize output buffer
 
