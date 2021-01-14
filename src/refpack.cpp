@@ -5,6 +5,8 @@ namespace bigfile {
 	namespace refpack {
 
 		// TODO: add a function to perform RefPack compression
+		
+		constexpr auto threebyte_size = 3u;
 
 		std::vector<byte> Decompress(Span<byte> compressed) {
 			const byte* in = compressed.get();

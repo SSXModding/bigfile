@@ -12,7 +12,7 @@ namespace bigfile {
 
 		uint32 FileCount;
 
-		uint32_t IndexTableSize;
+		uint32 IndexTableSize;
 	};
 
 	

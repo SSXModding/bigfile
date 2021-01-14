@@ -85,6 +85,8 @@ namespace bigfile {
 
 		/**
 		 * Set up an new empty archive.
+		 * This will clean out ANY archive already loaded
+		 * so do not do this for replacement
 		 */
 		bool SetupArchive(ArchiveType type);
 
@@ -104,7 +106,7 @@ namespace bigfile {
 		bool RemoveFile(const std::string& path);
 
 		// Serialize the archive to the given stream.
-		bool WriteArchive(std::ostream& stream);
+		bool WriteArchive(std::ofstream& stream);
 
 	   private:
 		   struct Impl;

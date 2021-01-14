@@ -170,6 +170,10 @@ namespace bigfile {
 			}
 		}
 
+		bool WriteFileImpl(const std::ofstream& os) {
+		
+		}
+
 		// Impl variables that can be accessed
 
 		std::map<std::string, File> files;
