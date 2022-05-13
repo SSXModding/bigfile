@@ -3,147 +3,11 @@
 #include <bigfile/structs/BigStructs.h>
 #include <bigfile/UtilityFunctions.h>
 
-#include <fstream>
-#include <iostream>
+#include "ops/ReadHeaderAndTocOp.h"
+#include "ops/ReadFileOp.h"
 
 
 namespace bigfile {
-
-	/**
-	 * Seek rewinder.
-	 * Go play Unturned if you don't get the joke.
-	 */
-	struct SeekyWheelyAutomobiley {
-		explicit SeekyWheelyAutomobiley(std::istream& is)
-			: is(is) {
-			last_offset = this->is.tellg();
-		}
-
-		~SeekyWheelyAutomobiley() {
-			is.seekg(last_offset, std::istream::beg);
-		}
-
-	   private:
-		std::istream& is;
-		std::size_t last_offset;
-	};
-
-	/**
-	 * Generic class to read the header and TOC.
-	 * Could technically be made lazy.
-	 */
-	template <class TFileHeader, class TTocHeader>
-	struct ReadHeaderAndTocOp {
-
-		explicit ReadHeaderAndTocOp(std::istream& is)
-			: is(is) {
-		}
-
-		bool operator()(std::map<std::string, BigArchive::File>& files) {
-			TFileHeader header {};
-			header.Read(is);
-
-			if(!is)
-				return false;
-
-			for(auto i = 0; i < header.FileCount; ++i) {
-				TTocHeader fileTocEntry {};
-				BigArchive::File file;
-				fileTocEntry.Read(is);
-
-				file.offset = fileTocEntry.Offset;
-
-				if(!is)
-					break;
-
-				// Check if this file is RefPack packed.
-				// If so, set the packtype appropriately.
-				{
-					SeekyWheelyAutomobiley rewinder(is);
-					std::uint8_t refpack_test[sizeof(std::uint16_t)];
-
-					is.seekg(fileTocEntry.Offset, std::istream::beg);
-					is.read(reinterpret_cast<char*>(&refpack_test[0]), sizeof(std::uint16_t));
-
-					if(refpack_test[0] == 0x10 && refpack_test[1] == 0xFB) {
-						uint24_be_t decompressed_size;
-						file.type = BigArchive::File::PackType::Refpack;
-						file.compressed_size = fileTocEntry.Length;
-
-						// Fetch decompressed size from the RefPack header,
-						// so we don't have to later. Also allows lazier bigpaths!
-						if(refpack_test[0] & 0x0100)
-							is.seekg(sizeof(uint24_le_t), std::istream::cur);
-
-						is.read(reinterpret_cast<char*>(&decompressed_size), sizeof(decompressed_size));
-
-						file.size = decompressed_size;
-					} else {
-						file.size = fileTocEntry.Length;
-					}
-				}
-
-				files[fileTocEntry.Filename] = file;
-			}
-
-			return true;
-		}
-
-	   private:
-		std::istream& is;
-	};
-
-	/**
-	 * Lazy file reader operation.
-	 */
-	struct ReadFileOp {
-		explicit ReadFileOp(std::istream& is, BigArchive::File& file)
-			: is(is), file(file) {
-		}
-
-		bool operator()() {
-			auto last_offset = is.tellg();
-
-			is.seekg(file.offset, std::istream::beg);
-
-			switch(file.type) {
-				case BigArchive::File::PackType::Uncompressed:
-					file.data.resize(file.size);
-					if(!is.read(reinterpret_cast<char*>(&file.data[0]), file.size))
-						return false;
-					break;
-
-				case BigArchive::File::PackType::Refpack: {
-					// Read compressed data into intermediate buffer
-					std::vector<std::uint8_t> intBuffer;
-					intBuffer.resize(file.compressed_size);
-
-					if(!is.read(reinterpret_cast<char*>(&intBuffer[0]), file.compressed_size))
-						return false;
-
-					// Do the magic
-					auto decompressed = refpack::Decompress(intBuffer);
-					if(decompressed.empty())
-						return false;
-
-					// resize final buffer and copy the decompressed data to it
-					file.data.resize(file.size);
-					memcpy(&file.data[0], &decompressed[0], file.size);
-				} break;
-
-				default:
-					//?????
-					return false;
-			}
-
-			is.seekg(last_offset, std::istream::beg);
-			return true;
-		}
-
-	   private:
-		std::istream& is;
-		BigArchive::File& file;
-	};
 
 	bool BigArchive::File::IsInMemory() const {
 		return !data.empty();
@@ -173,12 +37,13 @@ namespace bigfile {
 			return bigfile::GetArchiveType(magic);
 		}();
 
+		// Read header and TOC for given archive type
 		switch(format) {
 			case ArchiveType::BIGF:
-				return ReadHeaderAndTocOp<BigFileHeader, BigTocHeader> { stream }(files);
+				return detail::ReadHeaderAndTocOp<BigFileHeader, BigTocHeader> { stream }(files);
 
 			case ArchiveType::C0FB:
-				return ReadHeaderAndTocOp<CoFbFileHeader, CoFbTocHeader> { stream }(files);
+				return detail::ReadHeaderAndTocOp<CoFbFileHeader, CoFbTocHeader> { stream }(files);
 
 			case ArchiveType::NotArchive:
 			default:
@@ -198,8 +63,10 @@ namespace bigfile {
 				// If the file's not in memory, and we want it,
 				// try to read it.
 				if(!file.IsInMemory())
-					if(!ReadFileOp { *inputStream, file }())
-						return {}; // .. or if that fails, give up, even if it's in the map.
+					if(!detail::ReadFileOp { *inputStream, file }())
+						// .. or if that fails, give up, even if it's in the map,
+						// since the user requested data and isn't getting it.
+						return {};
 			}
 
 			return file;
