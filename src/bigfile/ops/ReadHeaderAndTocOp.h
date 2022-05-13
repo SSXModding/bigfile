@@ -6,11 +6,11 @@
 // This file is licensed under the MIT License.
 //
 
-#include <bigfile/BigArchive.h>
 #include <iostream>
-#include <bigfile/structs/BigStructs.h>
 
 #include "../SeekyWheelyAutomobiley.h"
+#include <bigfile/BigArchive.h>
+#include <bigfile/structs/BigStructs.h>
 
 #ifndef BIGFILE_READHEADERANDTOCOP_H
 #define BIGFILE_READHEADERANDTOCOP_H

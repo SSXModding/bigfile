@@ -3,9 +3,8 @@
 #include <bigfile/structs/BigStructs.h>
 #include <bigfile/UtilityFunctions.h>
 
-#include "ops/ReadHeaderAndTocOp.h"
 #include "ops/ReadFileOp.h"
-
+#include "ops/ReadHeaderAndTocOp.h"
 
 namespace bigfile {
 
@@ -26,6 +25,7 @@ namespace bigfile {
 		auto format = [&]() {
 			// Do a magic check
 			std::uint8_t magic[4];
+			constexpr static char BigfMagic[] = "BIGF";
 
 			stream.read((char*)&magic, 4);
 
@@ -34,7 +34,14 @@ namespace bigfile {
 
 			stream.seekg(0, std::istream::beg);
 
-			return bigfile::GetArchiveType(magic);
+			if(!strncmp(reinterpret_cast<char*>(&magic[0]), BigfMagic, sizeof(BigfMagic) - 1))
+				return ArchiveType::BIGF;
+
+			if(magic[0] == 0xC0 && magic[1] == 0xFB)
+				return ArchiveType::C0FB;
+
+			// Neither magic matched, so it's probably not supported.
+			return ArchiveType::NotArchive;
 		}();
 
 		// Read header and TOC for given archive type

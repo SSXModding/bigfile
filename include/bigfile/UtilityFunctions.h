@@ -92,20 +92,6 @@ namespace bigfile {
 #undef BYTESWAP32
 #undef BYTESWAP64
 
-	ArchiveType GetArchiveType(std::uint8_t* value);
-
-	/**
-	 * Read a structure one-shot.
-	 */
-	template <typename T>
-	bool ReadStruct(std::istream& stream, T& value) {
-		if(!stream)
-			return false;
-
-		stream.read((char*)&value, sizeof(T));
-		return true;
-	}
-
 	template <typename T>
 	constexpr void SwapBE(T& thing) {
 		if constexpr(std::endian::native == std::endian::little) // NOLINT
