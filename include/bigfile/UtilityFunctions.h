@@ -1,9 +1,20 @@
-#pragma once
+//
+// Bigfile
+//
+// (C) 2020-2022 modeco80 <lily.modeco80@protonmail.ch>
+//
+// This file is licensed under the MIT License.
+//
 
-#include <iostream>
+#ifndef BIGFILE_UTILITYFUNCTIONS_H
+#define BIGFILE_UTILITYFUNCTIONS_H
+
+#include <bigfile/ArchiveType.h>
+
 #include <algorithm>
+#include <bit>
 #include <cstring>
-#include <bigfile/archive_type.h>
+#include <iostream>
 
 #ifdef _MSC_VER
 	#include <intrin.h>
@@ -23,18 +34,18 @@
 	// Byteswap a 64-bit field.
 	#define BYTESWAP64(x) _byteswap_uint64(x)
 #elif defined(__GNUC__)
-	// Builtin functions with GNU C get turned into (sometimes single-instruction) intrinisics
-	// usually by default if the target supports them. Otherwise,
-	// they become inline functions (which still *have* a speed penalty,
-	// but far less then if it had to make a call into the C runtime)
+		// Builtin functions with GNU C get turned into (sometimes single-instruction) intrinisics
+		// usually by default if the target supports them. Otherwise,
+		// they become inline functions (which still *have* a speed penalty,
+		// but far less then if it had to make a call into the C runtime)
 
-	// Byteswap a 16-bit field.
+		// Byteswap a 16-bit field.
 	#define BYTESWAP16(x) __builtin_bswap16(x)
 
-	// Byteswap a 32-bit field.
+		// Byteswap a 32-bit field.
 	#define BYTESWAP32(x) __builtin_bswap32(x)
 
-	// Byteswap a 64-bit field.
+		// Byteswap a 64-bit field.
 	#define BYTESWAP64(x) __builtin_bswap64(x)
 #else
 	#error Unsupported compiler.
@@ -48,7 +59,7 @@ namespace bigfile {
 	 * \tparam T Type
 	 * \param[in] value value to swap endian of
 	 */
-	template<typename T>
+	template <typename T>
 	constexpr T SwapEndian(T value) {
 		if constexpr(sizeof(T) == 2) {
 			return BYTESWAP16(value);
@@ -76,12 +87,17 @@ namespace bigfile {
 		}
 	}
 
-	ArchiveType GetArchiveType(byte* value);
+// undefine internal macros.
+#undef BYTESWAP16
+#undef BYTESWAP32
+#undef BYTESWAP64
+
+	ArchiveType GetArchiveType(std::uint8_t* value);
 
 	/**
 	 * Read a structure one-shot.
 	 */
-	template<typename T>
+	template <typename T>
 	bool ReadStruct(std::istream& stream, T& value) {
 		if(!stream)
 			return false;
@@ -90,9 +106,18 @@ namespace bigfile {
 		return true;
 	}
 
+	template <typename T>
+	constexpr void SwapBE(T& thing) {
+		if constexpr(std::endian::native == std::endian::little) // NOLINT
+			thing = SwapEndian(thing);
+	}
+
+	template <typename T>
+	constexpr void SwapLE(T& thing) {
+		if constexpr(std::endian::native == std::endian::big) // NOLINT
+			thing = SwapEndian(thing);
+	}
+
 } // namespace bigfile
 
-// undefine internal macros.
-#undef BYTESWAP16
-#undef BYTESWAP32
-#undef BYTESWAP64
+#endif // BIGFILE_UTILITYFUNCTIONS_H

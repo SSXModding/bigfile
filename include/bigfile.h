@@ -1,10 +1,17 @@
-#pragma once
+//
+// Bigfile
+//
+// (C) 2020-2022 modeco80 <lily.modeco80@protonmail.ch>
+//
+// This file is licensed under the MIT License.
+//
+
+#ifndef BIGFILE_BIGFILE_H
+#define BIGFILE_BIGFILE_H
 
 // bigfile general header.
 // Use this for usage of bigfile
 
-// core type defintions
-#include <bigfile/types.h>
+#include <bigfile/BigArchive.h>
 
-#include <bigfile/utility_functions.h>
-#include <bigfile/big_archive.h>
+#endif // BIGFILE_BIGFILE_H

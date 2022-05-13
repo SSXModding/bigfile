@@ -1,6 +1,6 @@
 ## bigfile
 
-A C++ library for reading data from Electronic Arts BIGF and COFB archives. 
+A C++20 library for reading data from EA .BIG archive files. 
 
 Also provides code for working with EA RefPack compressed data.
 
@@ -9,8 +9,7 @@ Also provides code for working with EA RefPack compressed data.
 
 ### Requirements
 
-  * A standards-compliant C++17 compiler (Even MSVC will work)
-  * Git
+  * A standards-compliant C++20 compiler (Even MSVC will work)
 
 
 ### CMake Command line

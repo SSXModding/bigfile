@@ -1,11 +1,19 @@
+//
+// Bigfile
+//
+// (C) 2020-2022 modeco80 <lily.modeco80@protonmail.ch>
+//
+// This file is licensed under the MIT License.
+//
+
 // Example program that extracts all files in an archive using bigfile.
 
 #include <iostream>
 // std::quoted
+#include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <vector>
-#include <fstream>
-#include <filesystem>
 
 namespace fs = std::filesystem;
 
@@ -22,16 +30,17 @@ int main(int argc, char** argv) {
 
 	bigfile::BigArchive archive;
 
-	if(!archive.ReadFrom(stream)) {
+	if(!archive.ReadToc(stream)) {
 		std::cout << "Error reading archive\n";
+		return 1;
 	}
 
-	switch(archive.GetCurrentArchiveType()) {
+	switch(archive.GetArchiveType()) {
 		case bigfile::ArchiveType::BIGF:
-			std::cout << "Extracting a BIGF archive\n";
+			std::cout << "Extracting a BIGF (old style 32-bit) archive\n";
 			break;
 
-		case bigfile::ArchiveType::CoFb:
+		case bigfile::ArchiveType::C0FB:
 			std::cout << "Extracting a SSX Tricky C0FB archive\n";
 			break;
 
@@ -44,17 +53,29 @@ int main(int argc, char** argv) {
 
 	std::vector<std::string> paths = archive.GetPaths();
 
-	for(std::string path : paths) {
-		auto file = archive.GetFile(path);
+	for(std::string& path : paths) {
+		auto file_opt = archive.GetFile(path);
+		if(!file_opt.has_value())
+			break;
+
+		auto& file = (*file_opt).get();
+
+		// TODO: On Linux or anything with a / path seperator this logic BREAKS HARD.
+		//		I used to have a fix stashed in some random tree several eons ago, don't anymore.
 
 		// normalize path if the file name contains one,
 		// and create the directory tree too
 		if(path.find('/') != std::string::npos || path.find('\\') != std::string::npos) {
 			while(true) {
 				auto it = path.find('/');
+				if(it == std::string::npos)
+					it = path.find('\\');
 
 				if(it != std::string::npos)
-					path[it] = fs::path::preferred_separator;
+					if constexpr (fs::path::preferred_separator == '/')
+						break;
+					else
+						path[it] = fs::path::preferred_separator;
 				else
 					break;
 			}
@@ -70,8 +91,10 @@ int main(int argc, char** argv) {
 		std::cout << "Extracting file \"" << fspath.string() << "\"...\n";
 
 		std::ofstream stream(fspath.string(), std::ofstream::binary);
-		stream.write((char*)file->data.data(), file->data.size());
+		stream.write((char*)file.data.data(), file.data.size());
 		stream.close();
+
+		file.Done();
 	}
 
 	std::cout << "Done extracting files.\n";

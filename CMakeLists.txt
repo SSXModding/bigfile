@@ -59,14 +59,14 @@ if(NOT DEFINED CACHE{_BIGFILE_STDLIB})
 endif()
 
 
-set(BIGFILE_SOURCES 
-	${PROJECT_SOURCE_DIR}/src/big_archive.cpp
-	${PROJECT_SOURCE_DIR}/src/refpack.cpp
-	${PROJECT_SOURCE_DIR}/src/utility_functions.cpp
+set(BIGFILE_SOURCES
+		${PROJECT_SOURCE_DIR}/src/BigArchive.cpp
+		${PROJECT_SOURCE_DIR}/src/RefPack.cpp
+		${PROJECT_SOURCE_DIR}/src/UtilityFunctions.cpp
 )
 
 add_library(bigfile STATIC ${BIGFILE_SOURCES})
-set_property(TARGET bigfile PROPERTY CXX_STANDARD 17)
+set_property(TARGET bigfile PROPERTY CXX_STANDARD 20)
 set_property(TARGET bigfile PROPERTY CXX_STANDARD_REQUIRED ON)
 
 target_include_directories(bigfile PUBLIC ${PROJECT_SOURCE_DIR}/include)
@@ -76,7 +76,7 @@ target_include_directories(bigfile PUBLIC ${PROJECT_SOURCE_DIR}/include)
 if(BIGFILE_ENABLE_EXAMPLES)
 # add examples
 	add_executable(bigextract ${PROJECT_SOURCE_DIR}/src/examples/bigextract.cpp)
-	set_property(TARGET bigextract PROPERTY CXX_STANDARD 17)
+	set_property(TARGET bigextract PROPERTY CXX_STANDARD 20)
 	set_property(TARGET bigextract PROPERTY CXX_STANDARD_REQUIRED ON)
 	target_link_libraries(bigextract bigfile)
 
@@ -87,7 +87,7 @@ if(BIGFILE_ENABLE_EXAMPLES)
 	endif()
 	
 	add_executable(bigpaths ${PROJECT_SOURCE_DIR}/src/examples/bigpaths.cpp)
-	set_property(TARGET bigpaths PROPERTY CXX_STANDARD 17)
+	set_property(TARGET bigpaths PROPERTY CXX_STANDARD 20)
 	set_property(TARGET bigpaths PROPERTY CXX_STANDARD_REQUIRED ON)
 	target_link_libraries(bigpaths bigfile)
 endif()
