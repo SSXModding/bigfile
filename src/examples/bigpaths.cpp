@@ -48,12 +48,7 @@ int main(int argc, char** argv) {
 	std::vector<std::string> paths = archive.GetPaths();
 
 	for(std::string& path : paths) {
-		// Normally we might want to use false to indicate
-		// we don't want to read data, but right now we have to
-		// in order to get the decompressed size.
-		//
-		// This is a bit of a TODO.
-		auto& bigFile = archive.GetFile(path).value().get();
+		auto& bigFile = archive.GetFile(path, false).value().get();
 
 		if(bigFile.type == bigfile::BigArchive::File::PackType::Refpack)
 			std::cout << "\"" << path << "\" (RefPacked) size " << bigFile.size / 1000 << " KB (stored size " << bigFile.compressed_size / 1000 << " KB)\n";

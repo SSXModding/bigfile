@@ -10,30 +10,30 @@
 namespace bigfile {
 
 	/**
+	 * Seek rewinder.
+	 * Go play Unturned if you don't get the joke.
+	 */
+	struct SeekyWheelyAutomobiley {
+		explicit SeekyWheelyAutomobiley(std::istream& is)
+			: is(is) {
+			last_offset = this->is.tellg();
+		}
+
+		~SeekyWheelyAutomobiley() {
+			is.seekg(last_offset, std::istream::beg);
+		}
+
+	   private:
+		std::istream& is;
+		std::size_t last_offset;
+	};
+
+	/**
 	 * Generic class to read the header and TOC.
 	 * Could technically be made lazy.
 	 */
 	template <class TFileHeader, class TTocHeader>
 	struct ReadHeaderAndTocOp {
-
-		/**
-		 * Seek rewinder.
-		 * Go play Unturned if you don't get the joke.
-		 */
-		struct SeekyWheelyAutomobiley {
-			explicit SeekyWheelyAutomobiley(ReadHeaderAndTocOp& rh)
-				: rh(rh) {
-				last_offset = this->rh.is.tellg();
-			}
-
-			~SeekyWheelyAutomobiley() {
-				rh.is.seekg(last_offset, std::istream::beg);
-			}
-
-		   private:
-			ReadHeaderAndTocOp& rh;
-			std::size_t last_offset;
-		};
 
 		explicit ReadHeaderAndTocOp(std::istream& is)
 			: is(is) {
@@ -59,15 +59,25 @@ namespace bigfile {
 				// Check if this file is RefPack packed.
 				// If so, set the packtype appropriately.
 				{
-					SeekyWheelyAutomobiley rewinder(*this);
+					SeekyWheelyAutomobiley rewinder(is);
 					std::uint8_t refpack_test[sizeof(std::uint16_t)];
 
 					is.seekg(fileTocEntry.Offset, std::istream::beg);
 					is.read(reinterpret_cast<char*>(&refpack_test[0]), sizeof(std::uint16_t));
 
 					if(refpack_test[0] == 0x10 && refpack_test[1] == 0xFB) {
+						uint24_be_t decompressed_size;
 						file.type = BigArchive::File::PackType::Refpack;
 						file.compressed_size = fileTocEntry.Length;
+
+						// Fetch decompressed size from the RefPack header,
+						// so we don't have to later. Also allows lazier bigpaths!
+						if(refpack_test[0] & 0x0100)
+							is.seekg(sizeof(uint24_le_t), std::istream::cur);
+
+						is.read(reinterpret_cast<char*>(&decompressed_size), sizeof(decompressed_size));
+
+						file.size = decompressed_size;
 					} else {
 						file.size = fileTocEntry.Length;
 					}
@@ -104,17 +114,19 @@ namespace bigfile {
 					break;
 
 				case BigArchive::File::PackType::Refpack: {
+					// Read compressed data into intermediate buffer
 					std::vector<std::uint8_t> intBuffer;
 					intBuffer.resize(file.compressed_size);
 
 					if(!is.read(reinterpret_cast<char*>(&intBuffer[0]), file.compressed_size))
 						return false;
 
+					// Do the magic
 					auto decompressed = refpack::Decompress(intBuffer);
 					if(decompressed.empty())
 						return false;
 
-					file.size = decompressed.size();
+					// resize final buffer and copy the decompressed data to it
 					file.data.resize(file.size);
 					memcpy(&file.data[0], &decompressed[0], file.size);
 				} break;

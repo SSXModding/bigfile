@@ -82,6 +82,10 @@ namespace bigfile {
 		/**
 		 * Get a file from the archive. Returns an optional,
 		 * which is empty in case of error
+		 *
+		 * \param[in] path BIG file path
+		 * \param[in] wantsData Whether or not you want file data. For a ls-like program, or basic metadata,
+		 * 						 you might not. Defaults to true (causing a lazy-file-read if not in the data.)
 		 */
 		std::optional<std::reference_wrapper<File>> GetFile(const std::string& path, bool wantsData = true);
 
