@@ -92,9 +92,6 @@ namespace bigfile {
 			is.read(reinterpret_cast<char*>(&Offset), sizeof(Offset));
 			is.read(reinterpret_cast<char*>(&Length), sizeof(Length));
 
-			SwapLE(Offset);
-			SwapLE(Length);
-
 			while(true) {
 				char c = is.get();
 				if(c == '\0')
