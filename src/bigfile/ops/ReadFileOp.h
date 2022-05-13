@@ -22,14 +22,33 @@ namespace bigfile::detail {
 	 * Lazy file reader operation.
 	 */
 	struct ReadFileOp {
+		/**
+		 * Constructor.
+		 *
+		 * \param[in] is Stream to read from
+		 * \param[in] file File to read.
+		 */
 		explicit ReadFileOp(std::istream& is, BigArchive::File& file)
 			: is(is), file(file) {
 		}
 
+		/**
+		 * Execute this operation.
+		 * Automatically decompresses RefPack data.
+		 *
+		 * \return True if success, false otherwise.
+		 */
 		bool operator()();
 
 	   private:
+		/**
+		 * The IOStream we will read file data from.
+		 */
 		std::istream& is;
+
+		/**
+		 * The file we should read.
+		 */
 		BigArchive::File& file;
 	};
 
