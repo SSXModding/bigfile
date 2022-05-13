@@ -60,9 +60,6 @@ int main(int argc, char** argv) {
 
 		auto& file = (*file_opt).get();
 
-		// TODO: On Linux or anything with a / path seperator this logic BREAKS HARD.
-		//		I used to have a fix stashed in some random tree several eons ago, don't anymore.
-
 		// normalize path if the file name contains one,
 		// and create the directory tree too
 		if(path.find('/') != std::string::npos || path.find('\\') != std::string::npos) {

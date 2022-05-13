@@ -20,7 +20,7 @@ namespace bigfile {
 		 */
 		template <bool BE>
 		struct basic_uint24 {
-		   private: // TODO: Public?
+		   private:
 			constexpr void Set(std::uint32_t val) {
 				if constexpr(BE) {
 					bytes_[0] = (val >> 16) & 0xFF;
@@ -48,6 +48,11 @@ namespace bigfile {
 
 			constexpr basic_uint24& operator=(std::uint32_t val) {
 				Set(val);
+				return *this;
+			}
+
+			constexpr basic_uint24& operator=(basic_uint24 val) {
+				Set(val.Get());
 				return *this;
 			}
 

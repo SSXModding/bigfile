@@ -20,9 +20,6 @@
 
 namespace bigfile {
 
-	// TODO:
-	// - start work on implementing serialization & verify with game assets (this will be reeeal fun)
-
 	struct BigArchive {
 		/**
 		 * "Generic" file structure
