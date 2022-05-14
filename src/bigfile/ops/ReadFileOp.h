@@ -28,8 +28,8 @@ namespace bigfile::detail {
 		 * \param[in] is Stream to read from
 		 * \param[in] file File to read.
 		 */
-		explicit ReadFileOp(std::istream& is, BigArchive::File& file)
-			: is(is), file(file) {
+		explicit ReadFileOp(std::istream& is, BigArchive& archive, BigArchive::File& file)
+			: is(is), archive(archive), file(file) {
 		}
 
 		/**
@@ -50,6 +50,8 @@ namespace bigfile::detail {
 		 * The file we should read.
 		 */
 		BigArchive::File& file;
+
+		BigArchive& archive;
 	};
 
 } // namespace bigfile::detail

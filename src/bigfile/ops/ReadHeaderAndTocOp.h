@@ -27,16 +27,39 @@ namespace bigfile::detail {
 	template <class TFileHeader, class TTocHeader>
 	struct ReadHeaderAndTocOp {
 
-		explicit ReadHeaderAndTocOp(std::istream& is)
-			: is(is) {
+		explicit ReadHeaderAndTocOp(std::istream& is, BigArchive& archive)
+			: is(is),
+				archive(archive) {
 		}
 
-		bool operator()(std::map<std::string, BigArchive::File>& files) {
+		bool operator()() {
 			TFileHeader header {};
 			header.Read(is);
 
 			if(!is)
 				return false;
+
+			// Try to read in Lumpy debug information
+			// if it exists. This can reveal:
+			//
+			// - What version of Lumpy originally packed the archive
+			// - What flags were used (e.g: -pack1 -24 or such)
+			{
+				SeekyWheelyAutomobiley rewinder(is);
+				LumpyDebugInfo debugInfo{};
+
+				is.seekg(header.TocSize - sizeof(LumpyDebugInfo), std::istream::beg);
+
+				debugInfo.Read(is);
+
+				if(std::isalpha(debugInfo.LumpyVersion[0])) {
+					if(std::isdigit(debugInfo.LumpyVersion[1]) && std::isdigit(debugInfo.LumpyVersion[2]) && std::isdigit(debugInfo.LumpyVersion[3])) {
+						// Debug info is valid.
+						archive.debugInfo = debugInfo;
+					}
+				}
+
+			}
 
 			for(auto i = 0; i < header.FileCount; ++i) {
 				TTocHeader fileTocEntry {};
@@ -59,7 +82,12 @@ namespace bigfile::detail {
 
 					if(refpack_test[0] == 0x10 && refpack_test[1] == 0xFB) {
 						uint24_be_t decompressed_size;
-						file.type = BigArchive::File::PackType::Refpack;
+
+						// If the archive hasn't been marked with a pack type,
+						// do so now.
+						if(archive.packType != PackType::RefPack)
+							archive.packType = PackType::RefPack;
+
 						file.compressed_size = fileTocEntry.Length;
 
 						// Fetch decompressed size from the RefPack header,
@@ -71,11 +99,13 @@ namespace bigfile::detail {
 
 						file.size = decompressed_size;
 					} else {
+						if(archive.packType != PackType::Uncompressed)
+							archive.packType = PackType::Uncompressed;
 						file.size = fileTocEntry.Length;
 					}
 				}
 
-				files[fileTocEntry.Filename] = file;
+				archive.files[fileTocEntry.Filename] = file;
 			}
 
 			return true;
@@ -83,6 +113,7 @@ namespace bigfile::detail {
 
 	   private:
 		std::istream& is;
+		BigArchive& archive;
 	};
 
 

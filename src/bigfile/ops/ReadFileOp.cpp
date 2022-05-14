@@ -17,14 +17,14 @@ namespace bigfile::detail {
 
 		is.seekg(file.offset, std::istream::beg);
 
-		switch(file.type) {
-			case BigArchive::File::PackType::Uncompressed:
+		switch(archive.packType) {
+			case PackType::Uncompressed:
 				file.data.resize(file.size);
 				if(!is.read(reinterpret_cast<char*>(&file.data[0]), file.size))
 					return false;
 				break;
 
-			case BigArchive::File::PackType::Refpack: {
+			case PackType::RefPack: {
 				// Read compressed data into intermediate buffer
 				std::vector<std::uint8_t> intBuffer;
 				intBuffer.resize(file.compressed_size);

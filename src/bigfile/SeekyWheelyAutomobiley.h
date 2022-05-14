@@ -14,7 +14,7 @@
 namespace bigfile::detail {
 
 	/**
-	 * Seek rewinder.
+	 * Stream rewinder.
 	 * Go play Unturned if you don't get the joke.
 	 */
 	struct SeekyWheelyAutomobiley {

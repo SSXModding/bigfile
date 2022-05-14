@@ -24,6 +24,13 @@ namespace bigfile {
 		C0FB ///< Old style 24-bit.
 	};
 
+	enum PackType : std::uint8_t {
+		Uncompressed, ///< Uncompressed.
+
+		RefPack ///< EA RefPack (LZSS-like).
+
+	};
+
 }
 
 #endif

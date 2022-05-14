@@ -44,24 +44,21 @@ namespace bigfile {
 			return ArchiveType::NotArchive;
 		}();
 
+		type = format;
+
 		// Read header and TOC for given archive type
 		switch(format) {
 			case ArchiveType::BIGF:
-				return detail::ReadHeaderAndTocOp<BigFileHeader, BigTocHeader> { stream }(files);
+				return detail::ReadHeaderAndTocOp<BigFileHeader, BigTocHeader> { stream, *this }();
 
 			case ArchiveType::C0FB:
-				return detail::ReadHeaderAndTocOp<CoFbFileHeader, CoFbTocHeader> { stream }(files);
+				return detail::ReadHeaderAndTocOp<CoFbFileHeader, CoFbTocHeader> { stream, *this }();
 
 			case ArchiveType::NotArchive:
 			default:
 				return false;
 		}
 	}
-
-	ArchiveType BigArchive::GetArchiveType() {
-		return type;
-	}
-
 	std::optional<std::reference_wrapper<BigArchive::File>> BigArchive::GetFile(const std::string& path, bool wantsData) {
 		try {
 			auto& file = files.at(path);
@@ -70,7 +67,7 @@ namespace bigfile {
 				// If the file's not in memory, and we want it,
 				// try to read it.
 				if(!file.IsInMemory())
-					if(!detail::ReadFileOp { *inputStream, file }())
+					if(!detail::ReadFileOp { *inputStream, *this, file }())
 						// .. or if that fails, give up, even if it's in the map,
 						// since the user requested data and isn't getting it.
 						return {};
@@ -90,6 +87,20 @@ namespace bigfile {
 			temp.push_back(t.first);
 
 		return temp;
+	}
+
+
+
+	ArchiveType BigArchive::GetArchiveType() const {
+		return type;
+	}
+
+	PackType BigArchive::GetPackType() const {
+		return packType;
+	}
+
+	std::optional<LumpyDebugInfo> BigArchive::GetDebugInfo() const {
+		return debugInfo;
 	}
 
 } // namespace bigfile

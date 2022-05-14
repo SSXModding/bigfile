@@ -10,9 +10,9 @@
 #define BIGFILE_BIGARCHIVE_H
 
 #include <bigfile/ArchiveType.h>
+#include <bigfile/structs/BigStructs.h>
 
 #include <functional>
-#include <iosfwd>
 #include <map>
 #include <optional>
 #include <string>
@@ -20,21 +20,23 @@
 
 namespace bigfile {
 
+	namespace detail {
+		template <class TFileHeader, class TTocHeader>
+		struct ReadHeaderAndTocOp;
+
+		struct ReadFileOp;
+	}
+
 	struct BigArchive {
 		/**
 		 * "Generic" file structure
 		 */
 		struct File {
-			enum class PackType {
-				Uncompressed,
-				Refpack
-			};
-
 			/**
 			 * Returns true if this file has been loaded into memory.
 			 * False otherwise.
 			 */
-			bool IsInMemory() const;
+			[[nodiscard]] bool IsInMemory() const;
 
 			/**
 			 * Clear out file data.
@@ -42,11 +44,6 @@ namespace bigfile {
 			 * to get rid of it and save some memory.
 			 */
 			void Done();
-
-			/**
-			 * File pack type.
-			 */
-			PackType type { PackType::Uncompressed };
 
 			/**
 			 * Compressed file size.
@@ -94,11 +91,31 @@ namespace bigfile {
 		/**
 		 * Get the current archive type.
 		 */
-		ArchiveType GetArchiveType();
+		ArchiveType GetArchiveType() const;
+
+		/**
+		 * Get archive pack type.
+		 */
+		PackType GetPackType() const;
+
+		/**
+		 * Get debug info (if it exists)
+		 * @return
+		 */
+		std::optional<LumpyDebugInfo> GetDebugInfo() const;
 
 	   private:
+
+		template <class TFileHeader, class TTocHeader>
+		friend struct detail::ReadHeaderAndTocOp;
+
+		friend struct detail::ReadFileOp;
+
 		std::map<std::string, File> files;
 		ArchiveType type;
+		PackType packType;
+
+		std::optional<LumpyDebugInfo> debugInfo;
 
 		std::optional<std::reference_wrapper<std::istream>> inputStream;
 	};
