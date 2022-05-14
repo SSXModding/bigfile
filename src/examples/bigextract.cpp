@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 
 	bigfile::BigArchive archive;
 
-	if(!archive.ReadToc(stream)) {
+	if(!archive.ReadArchive(stream)) {
 		std::cout << "Error reading archive\n";
 		return 1;
 	}

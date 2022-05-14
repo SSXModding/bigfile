@@ -16,7 +16,11 @@ namespace bigfile {
 		data.clear();
 	}
 
-	bool BigArchive::ReadToc(std::istream& stream) {
+	BigArchive::BigArchive(ArchiveType type, PackType packType) {
+		InitArchive(type, packType);
+	}
+
+	bool BigArchive::ReadArchive(std::istream& stream) {
 		if(!stream)
 			return false;
 
@@ -59,6 +63,24 @@ namespace bigfile {
 				return false;
 		}
 	}
+
+	void BigArchive::InitArchive(ArchiveType type, PackType packType) {
+		this->type = type;
+		this->packType = packType;
+	}
+
+	ArchiveType BigArchive::GetArchiveType() const {
+		return type;
+	}
+
+	PackType BigArchive::GetPackType() const {
+		return packType;
+	}
+
+	std::optional<LumpyDebugInfo> BigArchive::GetDebugInfo() const {
+		return debugInfo;
+	}
+
 	std::optional<std::reference_wrapper<BigArchive::File>> BigArchive::GetFile(const std::string& path, bool wantsData) {
 		try {
 			auto& file = files.at(path);
@@ -87,20 +109,6 @@ namespace bigfile {
 			temp.push_back(t.first);
 
 		return temp;
-	}
-
-
-
-	ArchiveType BigArchive::GetArchiveType() const {
-		return type;
-	}
-
-	PackType BigArchive::GetPackType() const {
-		return packType;
-	}
-
-	std::optional<LumpyDebugInfo> BigArchive::GetDebugInfo() const {
-		return debugInfo;
 	}
 
 } // namespace bigfile

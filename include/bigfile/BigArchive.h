@@ -68,41 +68,57 @@ namespace bigfile {
 		};
 
 		/**
-		 * Read in a BIGF or C0FB archive from the given stream.
-		 * Returns false on any error.
+		 * Shorthand constructor to initialize a clean archive.
 		 */
-		bool ReadToc(std::istream& stream);
+		BigArchive(ArchiveType type, PackType packType);
 
 		/**
-		 * Get a file from the archive. Returns an optional,
-		 * which is empty in case of error
+		 * Initalize a clean archive, used for writing.
 		 *
-		 * \param[in] path BIG file path
-		 * \param[in] wantsData Whether or not you want file data. For a ls-like program, or basic metadata,
-		 * 						 you might not. Defaults to true (causing a lazy-file-read if not in the data.)
+		 * \param[in] type Archive type.
+		 * \param[in] packType The archive pack type.
 		 */
-		std::optional<std::reference_wrapper<File>> GetFile(const std::string& path, bool wantsData = true);
+		void InitArchive(ArchiveType type, PackType packType);
 
 		/**
-		 * Get all paths stored in the BIG archive.
+		 * Read in a BIG archive from the given stream.
+		 * This only reads the header and TOC from the archive,
+		 * all files are read lazily.
+		 *
+		 * \returns True if successful, false on any error.
 		 */
-		std::vector<std::string> GetPaths();
+		bool ReadArchive(std::istream& stream);
 
 		/**
 		 * Get the current archive type.
 		 */
-		ArchiveType GetArchiveType() const;
+		[[nodiscard]] ArchiveType GetArchiveType() const;
 
 		/**
 		 * Get archive pack type.
 		 */
-		PackType GetPackType() const;
+		[[nodiscard]] PackType GetPackType() const;
 
 		/**
 		 * Get debug info (if it exists)
-		 * @return
 		 */
-		std::optional<LumpyDebugInfo> GetDebugInfo() const;
+		[[nodiscard]] std::optional<LumpyDebugInfo> GetDebugInfo() const;
+
+		/**
+		 * Get a file from the archive. Returns an optional,
+		 * which is empty in case of error.
+		 *
+		 * \param[in] path BIG file path
+		 * \param[in] wantsData Whether or not you want file data. For a ls-like program, or basic metadata,
+		 * 						 you might not. Defaults to true (causing a lazy-read if not read yet.)
+		 */
+		[[nodiscard]] std::optional<std::reference_wrapper<File>> GetFile(const std::string& path, bool wantsData = true);
+
+		/**
+		 * Get all paths stored in the BIG archive.
+		 */
+		[[nodiscard]] std::vector<std::string> GetPaths();
+
 
 	   private:
 
@@ -117,6 +133,10 @@ namespace bigfile {
 
 		std::optional<LumpyDebugInfo> debugInfo;
 
+		/**
+		 * Input stream reference. Only needs to be valid
+		 * when reading.
+		 */
 		std::optional<std::reference_wrapper<std::istream>> inputStream;
 	};
 
