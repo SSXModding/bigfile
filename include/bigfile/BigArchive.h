@@ -65,7 +65,21 @@ namespace bigfile {
 			 * Automatically decompressed if the file is refpack compressed as a C0FB.
 			 */
 			std::vector<std::uint8_t> data {};
+
+		   private:
+			friend BigArchive;
+
+			// Not implemented yet
+
+			//explicit File(BigArchive& archive);
+
 		};
+
+		using FileMap = std::unordered_map<std::string, File>;
+		using iterator = FileMap::iterator;
+		using const_iterator = FileMap::iterator;
+
+		BigArchive() = default;
 
 		/**
 		 * Shorthand constructor to initialize a clean archive.
@@ -73,7 +87,7 @@ namespace bigfile {
 		BigArchive(ArchiveType type, PackType packType);
 
 		/**
-		 * Initalize a clean archive, used for writing.
+		 * Initialize a clean archive, used for writing.
 		 *
 		 * \param[in] type Archive type.
 		 * \param[in] packType The archive pack type.
@@ -104,6 +118,18 @@ namespace bigfile {
 		 */
 		[[nodiscard]] std::optional<LumpyDebugInfo> GetDebugInfo() const;
 
+		// Iterator API (not implemented yet)
+#if 0
+		iterator begin();
+		iterator end();
+
+		const_iterator cbegin();
+		const_iterator cend();
+
+		File& operator[](const std::string& path);
+		const File& operator[](const std::string& path) const;
+#endif
+
 		/**
 		 * Get a file from the archive. Returns an optional,
 		 * which is empty in case of error.
@@ -112,32 +138,33 @@ namespace bigfile {
 		 * \param[in] wantsData Whether or not you want file data. For a ls-like program, or basic metadata,
 		 * 						 you might not. Defaults to true (causing a lazy-read if not read yet.)
 		 */
-		[[nodiscard]] std::optional<std::reference_wrapper<File>> GetFile(const std::string& path, bool wantsData = true);
+		[[nodiscard, deprecated("Use iterator APIs where possible.")]] std::optional<std::reference_wrapper<File>> GetFile(const std::string& path, bool wantsData = true);
 
 		/**
 		 * Get all paths stored in the BIG archive.
 		 */
-		[[nodiscard]] std::vector<std::string> GetPaths();
+		[[nodiscard, deprecated("Use iterator APIs where possible.")]] std::vector<std::string> GetPaths();
 
 
 	   private:
 
 		template <class TFileHeader, class TTocHeader>
 		friend struct detail::ReadHeaderAndTocOp;
-
 		friend struct detail::ReadFileOp;
+		friend struct File;
 
-		std::map<std::string, File> files;
-		ArchiveType type;
-		PackType packType;
+		FileMap files;
 
-		std::optional<LumpyDebugInfo> debugInfo;
+		ArchiveType type{};
+		PackType packType{};
+
+		std::optional<LumpyDebugInfo> debugInfo{};
 
 		/**
-		 * Input stream reference. Only needs to be valid
-		 * when reading.
+		 * Input stream reference.
+		 * Only needs to be valid when told to read.
 		 */
-		std::optional<std::reference_wrapper<std::istream>> inputStream;
+		std::optional<std::reference_wrapper<std::istream>> inputStream{};
 	};
 
 } // namespace bigfile

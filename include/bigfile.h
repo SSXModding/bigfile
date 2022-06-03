@@ -12,6 +12,7 @@
 // bigfile general header.
 // Use this for usage of bigfile
 
+#warning This header is deprecated. Use <bigfile/BigArchive.h>
 #include <bigfile/BigArchive.h>
 
 #endif // BIGFILE_BIGFILE_H
