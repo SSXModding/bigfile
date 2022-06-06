@@ -63,7 +63,7 @@ namespace bigfile::detail {
 
 			for(auto i = 0; i < header.FileCount; ++i) {
 				TTocHeader fileTocEntry {};
-				BigArchive::File file;
+				BigArchive::File file(archive);
 				fileTocEntry.Read(is);
 
 				file.offset = fileTocEntry.Offset;
@@ -105,7 +105,7 @@ namespace bigfile::detail {
 					}
 				}
 
-				archive.files[fileTocEntry.Filename] = file;
+				archive.files.insert({fileTocEntry.Filename, file});
 			}
 
 			return true;

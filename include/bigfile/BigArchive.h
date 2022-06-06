@@ -39,11 +39,47 @@ namespace bigfile {
 			[[nodiscard]] bool IsInMemory() const;
 
 			/**
+			 * Read file data from archive
+			 */
+			bool ReadFile();
+
+			/**
 			 * Clear out file data.
 			 * If done with a file's data, this can be used
 			 * to get rid of it and save some memory.
 			 */
 			void Done();
+
+			std::uint32_t GetOffset() const;
+			std::uint32_t GetSize() const;
+
+			/**
+			 * With compressed files,
+			 * returns the compressed size.
+			 */
+			std::uint32_t GetCompressedSize() const;
+
+			/**
+			 * Get file data. Only valid if file is in memory,
+			 * or was inserted into the archive.
+			 */
+			const std::vector<std::uint8_t>& GetData() const;
+
+
+		   private:
+			friend BigArchive;
+
+			template <class TFileHeader, class TTocHeader>
+			friend struct detail::ReadHeaderAndTocOp;
+			friend struct detail::ReadFileOp;
+
+			explicit File(BigArchive& archive);
+
+			/**
+			 * The archive this file object is a part of.
+			 */
+			BigArchive& parentArchive;
+
 
 			/**
 			 * Compressed file size.
@@ -65,19 +101,11 @@ namespace bigfile {
 			 * Automatically decompressed if the file is refpack compressed as a C0FB.
 			 */
 			std::vector<std::uint8_t> data {};
-
-		   private:
-			friend BigArchive;
-
-			// Not implemented yet
-
-			//explicit File(BigArchive& archive);
-
 		};
 
 		using FileMap = std::unordered_map<std::string, File>;
 		using iterator = FileMap::iterator;
-		using const_iterator = FileMap::iterator;
+		using const_iterator = FileMap::const_iterator;
 
 		BigArchive() = default;
 
@@ -118,8 +146,6 @@ namespace bigfile {
 		 */
 		[[nodiscard]] std::optional<LumpyDebugInfo> GetDebugInfo() const;
 
-		// Iterator API (not implemented yet)
-#if 0
 		iterator begin();
 		iterator end();
 
@@ -128,23 +154,12 @@ namespace bigfile {
 
 		File& operator[](const std::string& path);
 		const File& operator[](const std::string& path) const;
-#endif
 
-		/**
-		 * Get a file from the archive. Returns an optional,
-		 * which is empty in case of error.
-		 *
-		 * \param[in] path BIG file path
-		 * \param[in] wantsData Whether or not you want file data. For a ls-like program, or basic metadata,
-		 * 						 you might not. Defaults to true (causing a lazy-read if not read yet.)
-		 */
-		[[nodiscard, deprecated("Use iterator APIs where possible.")]] std::optional<std::reference_wrapper<File>> GetFile(const std::string& path, bool wantsData = true);
 
-		/**
-		 * Get all paths stored in the BIG archive.
-		 */
-		[[nodiscard, deprecated("Use iterator APIs where possible.")]] std::vector<std::string> GetPaths();
+		iterator insert(const std::string& path, const std::vector<std::uint8_t>& data);
 
+		// do this?
+		//iterator insert(const_iterator hint, const std::string& path, const std::vector<std::uint8_t>& data);
 
 	   private:
 

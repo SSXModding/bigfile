@@ -8,6 +8,11 @@
 
 namespace bigfile {
 
+	BigArchive::File::File(BigArchive& archive)
+		: parentArchive(archive) {
+
+	}
+
 	bool BigArchive::File::IsInMemory() const {
 		return !data.empty();
 	}
@@ -15,6 +20,33 @@ namespace bigfile {
 	void BigArchive::File::Done() {
 		data.clear();
 	}
+
+	bool BigArchive::File::ReadFile() {
+		if(!IsInMemory())
+			return detail::ReadFileOp { *parentArchive.inputStream, parentArchive, *this }();
+
+		// Fast path - return true.
+		return true;
+	}
+
+	std::uint32_t BigArchive::File::GetOffset() const {
+		return offset;
+	}
+
+	std::uint32_t BigArchive::File::GetSize() const {
+		return size;
+	}
+
+	std::uint32_t BigArchive::File::GetCompressedSize() const {
+		// assert(compressed_size != 0 && "Not compressed. API contract says no"); ?
+		return compressed_size;
+	}
+
+	const std::vector<std::uint8_t>& BigArchive::File::GetData() const {
+		return data;
+	}
+
+ 	// BigArchive itself
 
 	BigArchive::BigArchive(ArchiveType type, PackType packType) {
 		InitArchive(type, packType);
@@ -81,34 +113,42 @@ namespace bigfile {
 		return debugInfo;
 	}
 
-	std::optional<std::reference_wrapper<BigArchive::File>> BigArchive::GetFile(const std::string& path, bool wantsData) {
-		try {
-			auto& file = files.at(path);
-
-			if(wantsData) {
-				// If the file's not in memory, and we want it,
-				// try to read it.
-				if(!file.IsInMemory())
-					if(!detail::ReadFileOp { *inputStream, *this, file }())
-						// .. or if that fails, give up, even if it's in the map,
-						// since the user requested data and isn't getting it.
-						return {};
-			}
-
-			return file;
-		} catch(std::out_of_range& oor) {
-			// File isn't in the map, so it's probably an invalid path.
-			return {};
-		}
+	BigArchive::iterator BigArchive::begin() {
+		return files.begin();
 	}
 
-	std::vector<std::string> BigArchive::GetPaths() {
-		std::vector<std::string> temp;
+	BigArchive::iterator BigArchive::end() {
+			return files.end();
+	}
 
-		for(auto&& t : files)
-			temp.push_back(t.first);
+	BigArchive::const_iterator BigArchive::cbegin() {
+		return files.cbegin();
+	}
 
-		return temp;
+	BigArchive::const_iterator BigArchive::cend() {
+		return files.cend();
+	}
+
+	BigArchive::iterator BigArchive::insert(const std::string& path, const std::vector<std::uint8_t>& data) {
+		// create a new file with data from the user
+		File f(*this);
+		f.data = data;
+		f.size = data.size();
+
+		auto [it, success] = files.insert({path, f});
+		if(success)
+			return it;
+
+		// maybe throw? idk
+		return files.end();
+	}
+
+	BigArchive::File& BigArchive::operator[](const std::string& path) {
+		return files.at(path);
+	}
+
+	const BigArchive::File& BigArchive::operator[](const std::string& path) const {
+		return files.at(path);
 	}
 
 } // namespace bigfile

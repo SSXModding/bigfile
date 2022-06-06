@@ -17,7 +17,7 @@
 
 namespace fs = std::filesystem;
 
-#include <bigfile.h>
+#include <bigfile/BigArchive.h>
 
 int main(int argc, char** argv) {
 	if(argc < 3) {
@@ -51,28 +51,28 @@ int main(int argc, char** argv) {
 	if(!fs::exists(root))
 		fs::create_directory(root);
 
-	std::vector<std::string> paths = archive.GetPaths();
 
-	for(std::string& path : paths) {
-		auto file_opt = archive.GetFile(path);
-		if(!file_opt.has_value())
-			break;
+	for(auto& [path, file] : archive) {
+		std::string fixedup_path = path;
 
-		auto& file = (*file_opt).get();
+		if(!file.ReadFile()) {
+			std::cout << "Couldn't read file data?\n";
+			return 1;
+		}
 
 		// normalize path if the file name contains one,
 		// and create the directory tree too
-		if(path.find('/') != std::string::npos || path.find('\\') != std::string::npos) {
+		if(fixedup_path.find('/') != std::string::npos || fixedup_path.find('\\') != std::string::npos) {
 			while(true) {
-				auto it = path.find('/');
+				auto it = fixedup_path.find('/');
 				if(it == std::string::npos)
-					it = path.find('\\');
+					it = fixedup_path.find('\\');
 
 				if(it != std::string::npos)
 					if constexpr (fs::path::preferred_separator == '/')
 						break;
 					else
-						path[it] = fs::path::preferred_separator;
+						fixedup_path[it] = fs::path::preferred_separator;
 				else
 					break;
 			}
@@ -88,7 +88,8 @@ int main(int argc, char** argv) {
 		std::cout << "Extracting file \"" << fspath.string() << "\"...\n";
 
 		std::ofstream stream(fspath.string(), std::ofstream::binary);
-		stream.write((char*)file.data.data(), file.data.size());
+
+		stream.write(reinterpret_cast<const char*>(file.GetData().data()), file.GetData().size());
 		stream.close();
 
 		file.Done();

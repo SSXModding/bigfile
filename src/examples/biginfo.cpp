@@ -94,13 +94,11 @@ int main(int argc, char** argv) {
 
 	std::cout << "Files:\n";
 
-	auto paths = archive.GetPaths();
-	for(std::string& path : paths) {
-		auto& bigFile = archive.GetFile(path, false).value().get();
-		auto sizeStr = FormatUnit(bigFile.size);
+	for(const auto& [path, bigfile] : archive) {
+		auto sizeStr = FormatUnit(bigfile.GetSize());
 
 		if(archive.GetPackType() == bigfile::PackType::RefPack) {
-			auto compressedSizeStr = FormatUnit(bigFile.compressed_size);
+			auto compressedSizeStr = FormatUnit(bigfile.GetCompressedSize());
 			std::cout << std::setw(4) << "\"" << path << "\" size " << sizeStr << " (in-archive size " << compressedSizeStr << ")" << std::endl;
 		} else {
 			std::cout << std::setw(4) << "\"" << path << "\" size " << sizeStr << std::endl;
