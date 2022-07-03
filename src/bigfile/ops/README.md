@@ -27,3 +27,5 @@ As this document explained before, this design pattern is worse than the operati
 so using it would seem like a step backwards.
 
 Also, cleaner code. Which is a must for formats, as documentation kind of isn't everything.
+
+As MAME developers have found out, the best documentation is the code. And the code should be easy to grok.

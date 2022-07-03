@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 			break;
 
 		case bigfile::ArchiveType::C0FB:
-			std::cout << "Extracting a SSX Tricky C0FB archive\n";
+			std::cout << "Extracting a C0FB (old-style 16-bit) archive\n";
 			break;
 
 		default:
@@ -53,43 +53,24 @@ int main(int argc, char** argv) {
 
 
 	for(auto& [path, file] : archive) {
-		std::string fixedup_path = path;
+		// This is a bit screwy, on Windows it won't convert / paths
+		// (which is fine, I think?) but on Linux it will convert \ paths.
+		// I wish I knew why. Hopefully this doesn't break
+		auto fixedup_path = fs::path(path).make_preferred();
 
 		if(!file.ReadFile()) {
 			std::cout << "Couldn't read file data?\n";
 			return 1;
 		}
 
-		// normalize path if the file name contains one,
-		// and create the directory tree too
-		if(fixedup_path.find('/') != std::string::npos || fixedup_path.find('\\') != std::string::npos) {
-			while(true) {
-				auto it = fixedup_path.find('/');
-				if(it == std::string::npos)
-					it = fixedup_path.find('\\');
+		// create directory tree
+		fs::create_directories(root / fixedup_path.stem());
 
-				if(it != std::string::npos)
-					if constexpr (fs::path::preferred_separator == '/')
-						break;
-					else
-						fixedup_path[it] = fs::path::preferred_separator;
-				else
-					break;
-			}
+		std::cout << "Extracting file \"" << fixedup_path.string() << "\"...\n";
 
-			auto nofile = path.substr(0, path.rfind(fs::path::preferred_separator));
+		std::ofstream stream(fixedup_path.string(), std::ofstream::binary);
 
-			// create directory tree
-			fs::create_directories(root / nofile);
-		}
-
-		auto fspath = root / path;
-
-		std::cout << "Extracting file \"" << fspath.string() << "\"...\n";
-
-		std::ofstream stream(fspath.string(), std::ofstream::binary);
-
-		stream.write(reinterpret_cast<const char*>(file.GetData().data()), file.GetData().size());
+		stream.write(reinterpret_cast<const char*>(file.GetData().data()), static_cast<std::streamsize>(file.GetData().size()));
 		stream.close();
 
 		file.Done();

@@ -109,8 +109,8 @@ namespace bigfile {
 	 * inside of a big file.
 	 */
 	struct LumpyDebugInfo {
-		char LumpyVersion[4]; // Corresponds to the lumpy version, e.g: L218
-		std::uint32_t LumpyFlags; // These somehow correspond to the version of Lumpy used to pack the archive?
+		char LumpyVersion[4]; // Corresponds to the lumpy version, e.g: L218 means lumpy 2.18 produced the archive
+		std::uint32_t LumpyFlags; // These somehow correspond to the flags used to pack the archive?
 
 		void Read(std::istream& is) {
 			is.read(&LumpyVersion[0], sizeof(LumpyVersion));

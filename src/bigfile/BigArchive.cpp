@@ -23,9 +23,11 @@ namespace bigfile {
 
 	bool BigArchive::File::ReadFile() {
 		if(!IsInMemory())
-			return detail::ReadFileOp { *parentArchive.inputStream, parentArchive, *this }();
+			return detail::ReadFileOp { parentArchive, *this }();
 
-		// Fast path - return true.
+		// Since we're in memory already, we don't need
+		// to actually kick off any operation.
+
 		return true;
 	}
 
