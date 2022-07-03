@@ -21,7 +21,7 @@
 namespace bigfile {
 
 	namespace detail {
-		template <class TFileHeader, class TTocHeader>
+		template <class TFileHeader>
 		struct ReadHeaderAndTocOp;
 
 		struct ReadFileOp;
@@ -69,7 +69,7 @@ namespace bigfile {
 		   private:
 			friend BigArchive;
 
-			template <class TFileHeader, class TTocHeader>
+			template <class TFileHeader>
 			friend struct detail::ReadHeaderAndTocOp;
 			friend struct detail::ReadFileOp;
 
@@ -163,7 +163,7 @@ namespace bigfile {
 
 	   private:
 
-		template <class TFileHeader, class TTocHeader>
+		template <class TFileHeader>
 		friend struct detail::ReadHeaderAndTocOp;
 		friend struct detail::ReadFileOp;
 		friend struct File;

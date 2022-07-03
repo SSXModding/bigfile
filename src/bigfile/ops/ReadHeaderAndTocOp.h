@@ -22,17 +22,20 @@ namespace bigfile::detail {
 	 * Could technically be made a bit lazier.
 	 *
 	 * \tparam TFileHeader File header type.
-	 * \tparam TTocHeader TOC header type.
 	 */
-	template <class TFileHeader, class TTocHeader>
+	template <class TFileHeader>
 	struct ReadHeaderAndTocOp {
+		using TTocHeader = typename TFileHeader::TocType;
 
-		explicit ReadHeaderAndTocOp(std::istream& is, BigArchive& archive)
-			: is(is),
-				archive(archive) {
+		explicit ReadHeaderAndTocOp(BigArchive& archive)
+			: archive(archive) {
+			if(!archive.inputStream.has_value())
+				throw std::runtime_error("ReadHeaderAndTocOp() attempted to be created without a valid input stream");
 		}
 
 		bool operator()() {
+			auto& is = (*archive.inputStream).get();
+
 			TFileHeader header {};
 			header.Read(is);
 
@@ -77,6 +80,7 @@ namespace bigfile::detail {
 					SeekyWheelyAutomobiley rewinder(is);
 					std::uint8_t refpack_test[sizeof(std::uint16_t)];
 
+
 					is.seekg(fileTocEntry.Offset, std::istream::beg);
 					is.read(reinterpret_cast<char*>(&refpack_test[0]), sizeof(std::uint16_t));
 
@@ -112,7 +116,6 @@ namespace bigfile::detail {
 		}
 
 	   private:
-		std::istream& is;
 		BigArchive& archive;
 	};
 

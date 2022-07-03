@@ -5,6 +5,7 @@
 
 #include "ops/ReadFileOp.h"
 #include "ops/ReadHeaderAndTocOp.h"
+#include "ops/WriteHeaderOp.h"
 
 namespace bigfile {
 
@@ -87,10 +88,10 @@ namespace bigfile {
 		// Read header and TOC for given archive type
 		switch(format) {
 			case ArchiveType::BIGF:
-				return detail::ReadHeaderAndTocOp<BigFileHeader, BigTocHeader> { stream, *this }();
+				return detail::ReadHeaderAndTocOp<BigFileHeader> { *this }();
 
 			case ArchiveType::C0FB:
-				return detail::ReadHeaderAndTocOp<CoFbFileHeader, CoFbTocHeader> { stream, *this }();
+				return detail::ReadHeaderAndTocOp<CoFbFileHeader> { *this }();
 
 			case ArchiveType::NotArchive:
 			default:

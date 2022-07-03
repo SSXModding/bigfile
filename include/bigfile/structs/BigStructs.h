@@ -18,10 +18,15 @@
 
 namespace bigfile {
 
+	struct BigTocHeader;
+	struct CoFbTocHeader;
+
 	/**
 	 * BIGF file header
 	 */
 	struct BigFileHeader {
+		using TocType = BigTocHeader;
+
 		std::uint32_t Magic; // BIGF. This is also applicable partially for big4, since BIG<N> follows the same format
 		std::uint32_t ArchiveSize;
 		std::uint32_t FileCount;
@@ -67,6 +72,8 @@ namespace bigfile {
 
 	// C0FB header
 	struct CoFbFileHeader {
+		using TocType = CoFbTocHeader;
+
 		std::uint16_t Magic;
 		std::uint16_t TocSize;
 		std::uint16_t FileCount;
