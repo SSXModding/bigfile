@@ -10,7 +10,7 @@
 
 namespace bigfile::detail {
 
-	template struct ReadHeaderAndTocOp<BigFileHeader, BigTocHeader>;
-	template struct ReadHeaderAndTocOp<CoFbFileHeader, CoFbTocHeader>;
+	template struct ReadHeaderAndTocOp<BigFileHeader>;
+	template struct ReadHeaderAndTocOp<CoFbFileHeader>;
 
 } // namespace bigfile::detail

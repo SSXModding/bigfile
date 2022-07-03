@@ -13,6 +13,17 @@
 namespace bigfile::detail {
 
 	bool ReadFileOp::operator()() {
+		// While this is partially a footgun,
+		// the constructor verifies that this should
+		// work.
+		//
+		// We also assert that the input stream
+		// should stay around until at least the archive
+		// is removed.
+		// So it's sleazy, but it's sleazy that should work.
+
+		auto& is = (*archive.inputStream).get();
+
 		auto last_offset = is.tellg();
 
 		is.seekg(file.offset, std::istream::beg);

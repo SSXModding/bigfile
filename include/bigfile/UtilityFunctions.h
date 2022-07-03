@@ -34,7 +34,7 @@
 	// Byteswap a 64-bit field.
 	#define BYTESWAP64(x) _byteswap_uint64(x)
 #elif defined(__GNUC__)
-		// Builtin functions with GNU C get turned into (sometimes single-instruction) intrinisics
+		// Builtin functions with GNU C get turned into (sometimes single-instruction) intrinsics
 		// usually by default if the target supports them. Otherwise,
 		// they become inline functions (which still *have* a speed penalty,
 		// but far less then if it had to make a call into the C runtime)
@@ -71,17 +71,18 @@ namespace bigfile {
 			// slower than an individual N-byte field, but
 			// whatever. At least we can swap the endian of anything we want this way
 
-			T temp {};
+			static_assert(sizeof(T) % sizeof(std::uint16_t) != 0, "T must be evenly divisible by sizeof(std::uint16_t).");
 
-			// copy value-structure to temp structure
-			memcpy(&temp, &value, sizeof(T));
+			T temp {value};
+#if 0
+			// copy value-structure to temp structure we will return
+			//memcpy(&temp, &value, sizeof(T));
+#endif
 
-			// perform swap
-			//
 			// This works by treating the temporary structure
 			// as if it was an array of 16bit fields.
-			for(int i = 0; i < sizeof(T); i += sizeof(std::uint16_t))
-				((std::uint16_t*)&temp)[i] = BYTESWAP16(((std::uint16_t*)&temp)[i]);
+			for(std::size_t i = 0; i < sizeof(T); i += sizeof(std::uint16_t))
+				reinterpret_cast<std::uint16_t*>(&temp)[i] = BYTESWAP16(reinterpret_cast<std::uint16_t*>(&temp)[i]);
 
 			return temp;
 		}

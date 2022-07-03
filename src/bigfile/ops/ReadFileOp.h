@@ -25,11 +25,14 @@ namespace bigfile::detail {
 		/**
 		 * Constructor.
 		 *
-		 * \param[in] is Stream to read from
+		 * \param[in] archive The archive the file is in. Must have a valid input stream.
 		 * \param[in] file File to read.
 		 */
-		explicit ReadFileOp(std::istream& is, BigArchive& archive, BigArchive::File& file)
-			: is(is), archive(archive), file(file) {
+		explicit ReadFileOp(BigArchive& archive, BigArchive::File& file)
+			: archive(archive), file(file) {
+			// Simple fool-check.
+			if(!archive.inputStream.has_value())
+				throw std::runtime_error("ReadFileOp() attempted to be created without a valid input stream");
 		}
 
 		/**
@@ -41,11 +44,6 @@ namespace bigfile::detail {
 		bool operator()();
 
 	   private:
-		/**
-		 * The IOStream we will read file data from.
-		 */
-		std::istream& is;
-
 		/**
 		 * The file we should read.
 		 */

@@ -24,12 +24,22 @@ namespace bigfile::detail {
 		}
 
 		~SeekyWheelyAutomobiley() {
-			is.seekg(last_offset, std::istream::beg);
+			if(should_rewind)
+				is.seekg(last_offset, std::istream::beg);
+		}
+
+		/**
+		 * Call to "avoid" rewinding if it shouldn't be done.
+		 */
+		void DontRewind() {
+			if(should_rewind)
+				should_rewind = false;
 		}
 
 	   private:
 		std::istream& is;
 		std::size_t last_offset;
+		bool should_rewind{true};
 	};
 
 
