@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
 		// This is a bit screwy, on Windows it won't convert / paths
 		// (which is fine, I think?) but on Linux it will convert \ paths.
 		// I wish I knew why. Hopefully this doesn't break
-		auto fixedup_path = fs::path(path).make_preferred();
+		auto fixedup_path = fs::path(root / path).make_preferred();
 
 		if(!file.ReadFile()) {
 			std::cout << "Couldn't read file data?\n";
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
 		}
 
 		// create directory tree
-		fs::create_directories(root / fixedup_path.stem());
+		fs::create_directories(fixedup_path.parent_path());
 
 		std::cout << "Extracting file \"" << fixedup_path.string() << "\"...\n";
 
