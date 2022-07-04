@@ -21,6 +21,7 @@ namespace bigfile::refpack {
 	 * \return A decompressed buffer, or an empty buffer on error..
 	 */
 	std::vector<std::uint8_t> Decompress(const std::vector<std::uint8_t>& compressed);
+	//std::vector<std::uint8_t> Compress(const std::vector<std::uint8_t>& source, bool quick);
 
 } // namespace bigfile::refpack
 

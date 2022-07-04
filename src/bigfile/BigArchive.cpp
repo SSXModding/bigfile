@@ -73,7 +73,7 @@ namespace bigfile {
 
 			stream.seekg(0, std::istream::beg);
 
-			if(!strncmp(reinterpret_cast<char*>(&magic[0]), BigfMagic, sizeof(BigfMagic) - 1))
+			if(!std::memcmp(reinterpret_cast<char*>(&magic[0]), BigfMagic, sizeof(BigfMagic) - 1))
 				return ArchiveType::BIGF;
 
 			if(magic[0] == 0xC0 && magic[1] == 0xFB)

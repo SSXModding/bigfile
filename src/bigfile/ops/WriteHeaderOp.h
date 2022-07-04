@@ -24,19 +24,21 @@ namespace bigfile::detail {
 	 */
 	template <class TFileHeader>
 	struct WriteHeaderOp {
-		WriteHeaderOp(BigArchive& archive, std::ostream& os)
+		WriteHeaderOp(BigArchive& archive, std::ostream& os, const TFileHeader& header)
 			: archive(archive),
-			  os(os) {
+			  os(os),
+			  header(header) {
 		}
 
 		bool operator()() const {
-			// TODO: implement me :)
+
 			return true;
 		}
 
 	   private:
 		BigArchive& archive;
 		std::ostream& os;
+		const TFileHeader& header;
 	};
 
 } // namespace bigfile::detail
